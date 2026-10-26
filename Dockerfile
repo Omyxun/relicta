@@ -17,11 +17,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./app ./app
 
-RUN groupadd -r sentinel && useradd -r -g sentinel -d /app -s /sbin/nologin sentinel \
+RUN groupadd -r relicta && useradd -r -g relicta -d /app -s /sbin/nologin relicta \
     && mkdir -p /app/data \
-    && chown -R sentinel:sentinel /app
+    && chown -R relicta:relicta /app
 
-USER sentinel
+USER relicta
 
 EXPOSE 8000
 

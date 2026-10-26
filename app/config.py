@@ -15,18 +15,18 @@ class Settings(BaseSettings):
     )
 
     # Application & Auth
-    APP_NAME: str = "BazarSentinel"
+    APP_NAME: str = "Relicta"
     SECRET_KEY: str = Field(
         default="insecure-dev-secret-key-replace-immediately-in-env",
         min_length=16,
     )
     ALLOW_REGISTRATION: bool = True
-    SESSION_COOKIE_NAME: str = "sentinel_session"
+    SESSION_COOKIE_NAME: str = "relicta_session"
     SESSION_MAX_AGE_SECONDS: int = 60 * 60 * 24 * 30  # 30 days
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./data/sentinel.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./data/relicta.db"
 
     # Currency & Localization
     DEFAULT_BASE_CURRENCY: str = "CZK"

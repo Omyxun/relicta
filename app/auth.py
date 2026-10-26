@@ -25,7 +25,7 @@ _password_hasher = PasswordHasher(
 
 _session_serializer = URLSafeTimedSerializer(
     secret_key=settings.SECRET_KEY,
-    salt="sentinel-auth-session-v1",
+    salt="relicta-auth-session-v1",
 )
 
 

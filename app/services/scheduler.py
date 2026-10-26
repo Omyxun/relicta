@@ -65,7 +65,7 @@ class SchedulerService:
 
         self._stop_event.clear()
         await self._initialize_state()
-        self._task = asyncio.create_task(self._worker_loop(), name="sentinel-scheduler")
+        self._task = asyncio.create_task(self._worker_loop(), name="relicta-scheduler")
         logger.info("Sequential SchedulerService started.")
 
     async def stop(self) -> None:

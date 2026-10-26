@@ -1,9 +1,9 @@
 services:
-  bazar-sentinel:
+  relicta:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bazar-sentinel
+    container_name: relicta
     restart: unless-stopped
     ports:
       - "8000:8000"
