@@ -1,0 +1,1 @@
+"""FastAPI route handlers for Web GUI and HTMX partials."""

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Settings &amp; Notifications — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <div>
+        <h1 class="text-xl font-bold text-white">User &amp; Notification Settings</h1>
+        <p class="text-xs text-slate-400 mt-0.5">
+            Configure currency normalization and batch digest delivery channels.
+        </p>
+    </div>
+
+    <form hx-post="/settings"
+          hx-target="#toast-container"
+          hx-swap="beforeend"
+          class="space-y-6">
+
+        <!-- Currency Normalization Card -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-white">Currency Normalization Engine</h2>
+                    <p class="text-xs text-slate-400">Foreign listings (e.g., eBay EUR/USD) are automatically converted before budget filtering.</p>
+                </div>
+                <select name="base_currency"
+                        class="rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm font-mono text-sky-400 focus:outline-none focus:border-sky-500">
+                    {% for code in supported_currencies %}
+                    <option value="{{ code }}" {% if current_user.base_currency == code %}selected{% endif %}>{{ code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex flex-wrap gap-3 text-xs text-slate-400">
+                <span>Cached ČNB / ECB Rates (to CZK):</span>
+                {% for code, rate in fx_rates.items() %}
+                <span class="font-mono px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300">
+                    1 {{ code }} = {{ rate }} CZK
+                </span>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Telegram Notification Card -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" name="notify_telegram" value="1"
+                           {% if current_user.notify_telegram %}checked{% endif %}
+                           class="w-4 h-4 rounded border-slate-600 text-sky-500" />
+                    <div>
+                        <h2 class="text-base font-bold text-white">Telegram Digest Alerts</h2>
+                        <p class="text-xs text-slate-400">Instant HTML-formatted deal digests via Telegram Bot API.</p>
+                    </div>
+                </div>
+
+                <button type="button"
+                        hx-post="/settings/test/telegram"
+                        hx-target="#toast-container"
+                        hx-swap="beforeend"
+                        class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-xs font-semibold text-sky-300 border border-slate-700 transition">
+                    Send Test Alert
+                </button>
+            </div>
+
+            <!-- 3-Step Setup Guide Tooltip Box -->
+            <details class="bg-slate-950/70 border border-slate-800 rounded-lg p-3.5 text-xs text-slate-300">
+                <summary class="cursor-pointer font-semibold text-sky-400">
+                    ℹ️ 3-Step Telegram Setup Guide (@BotFather &amp; Chat ID)
+                </summary>
+                <ol class="list-decimal list-inside space-y-1.5 mt-2 text-slate-400">
+                    <li>Message <strong>@BotFather</strong> on Telegram, send <code class="text-slate-200">/newbot</code>, and copy the HTTP API Bot Token (or leave blank if the server admin configured a shared token).</li>
+                    <li>Open a chat with your newly created bot and click <strong>Start</strong> (bots cannot initiate messages until you message them first).</li>
+                    <li>Message <strong>@userinfobot</strong> or visit <code class="text-slate-200">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> to find your numeric <code class="text-slate-200">chat_id</code>.</li>
+                </ol>
+            </details>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Telegram Bot Token {% if has_shared_tg_token %}<span class="text-emerald-400">(Shared .env token available)</span>{% endif %}
+                    </label>
+                    <input type="password" name="telegram_bot_token"
+                           value="{{ current_user.telegram_bot_token or '' }}"
+                           placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Telegram Chat ID</label>
+                    <input type="text" name="telegram_chat_id"
+                           value="{{ current_user.telegram_chat_id or '' }}"
+                           placeholder="e.g., 987654321 or -100123456789"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+            </div>
+        </section>
+
+        <!-- ntfy Notification Card -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" name="notify_ntfy" value="1"
+                           {% if current_user.notify_ntfy %}checked{% endif %}
+                           class="w-4 h-4 rounded border-slate-600 text-sky-500" />
+                    <div>
+                        <h2 class="text-base font-bold text-white">ntfy Push Notifications</h2>
+                        <p class="text-xs text-slate-400">Supports public ntfy.sh or self-hosted ntfy instances with Markdown &amp; priority tags.</p>
+                    </div>
+                </div>
+
+                <button type="button"
+                        hx-post="/settings/test/ntfy"
+                        hx-target="#toast-container"
+                        hx-swap="beforeend"
+                        class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-xs font-semibold text-sky-300 border border-slate-700 transition">
+                    Send Test Alert
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">ntfy Server URL</label>
+                    <input type="url" name="ntfy_url"
+                           value="{{ current_user.ntfy_url or default_ntfy_url }}"
+                           placeholder="https://ntfy.sh"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Topic Name</label>
+                    <input type="text" name="ntfy_topic"
+                           value="{{ current_user.ntfy_topic or '' }}"
+                           placeholder="my-secret-bazar-alerts"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Access Token (Optional)</label>
+                    <input type="password" name="ntfy_token"
+                           value="{{ current_user.ntfy_token or '' }}"
+                           placeholder="tk_..."
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+            </div>
+        </section>
+
+        <!-- Email Digest Card -->
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" name="notify_email" value="1"
+                           {% if current_user.notify_email %}checked{% endif %}
+                           class="w-4 h-4 rounded border-slate-600 text-sky-500" />
+                    <div>
+                        <h2 class="text-base font-bold text-white">Email Batch Digests (SMTP)</h2>
+                        <p class="text-xs text-slate-400">
+                            Multipart HTML + plaintext digests.
+                            {% if has_smtp_configured %}
+                            <span class="text-emerald-400">SMTP relay configured in .env.</span>
+                            {% else %}
+                            <span class="text-amber-400">Configure SMTP_HOST in .env to enable email delivery.</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <button type="button"
+                        hx-post="/settings/test/email"
+                        hx-target="#toast-container"
+                        hx-swap="beforeend"
+                        class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-xs font-semibold text-sky-300 border border-slate-700 transition">
+                    Send Test Alert
+                </button>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Recipient Email Address</label>
+                <input type="email" name="email_address"
+                       value="{{ current_user.email_address or '' }}"
+                       placeholder="alerts@example.com"
+                       class="w-full max-w-md rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+            </div>
+        </section>
+
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="px-6 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-sm transition">
+                Save All Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

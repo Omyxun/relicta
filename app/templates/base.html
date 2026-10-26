@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-full flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+    {% if current_user %}
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <a href="/" class="flex items-center gap-2.5 text-lg font-bold tracking-tight text-white">
+                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-400 font-mono text-sm">BS</span>
+                    <span>{{ app_name }}</span>
+                </a>
+                <nav class="flex items-center gap-1 text-sm font-medium">
+                    <a href="/"
+                       class="px-3 py-2 rounded-lg transition {% if request.url.path == '/' %}bg-slate-800 text-sky-400{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                        Dashboard
+                    </a>
+                    <a href="/jobs"
+                       class="px-3 py-2 rounded-lg transition {% if request.url.path.startswith('/jobs') %}bg-slate-800 text-sky-400{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                        Search Jobs
+                    </a>
+                    <a href="/settings"
+                       class="px-3 py-2 rounded-lg transition {% if request.url.path.startswith('/settings') %}bg-slate-800 text-sky-400{% else %}text-slate-300 hover:text-white hover:bg-slate-800/60{% endif %}">
+                        Settings
+                    </a>
+                </nav>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="hidden sm:flex items-center gap-2 text-xs text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700/70">
+                    <span class="font-medium text-slate-200">{{ current_user.username }}</span>
+                    {% if current_user.is_admin %}
+                    <span class="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-amber-500/20 text-amber-300 rounded">Admin</span>
+                    {% endif %}
+                    <span class="text-slate-600">|</span>
+                    <span class="font-mono text-sky-400">{{ current_user.base_currency }}</span>
+                </div>
+                <form action="/logout" method="POST">
+                    <button type="submit"
+                            class="text-xs font-medium text-slate-400 hover:text-rose-400 px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition">
+                        Sign out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+    {% endif %}
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- HTMX Modal Container -->
+    <div id="modal-container" class="relative z-50"></div>
+
+    <!-- HTMX Toast Container -->
+    <div id="toast-container"
+         class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+    </div>
+
+</body>
+</html>

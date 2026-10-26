@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Search Jobs — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-white">Search Jobs</h1>
+            <p class="text-xs text-slate-400 mt-0.5">
+                Configure multi-query searches, price floors, shipping buffers, and two-stage keyword rules.
+            </p>
+        </div>
+
+        <button type="button"
+                hx-get="/jobs/new"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                class="inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold px-4 py-2.5 rounded-lg text-xs transition">
+            <span>+ New Search Job</span>
+        </button>
+    </div>
+
+    {% if jobs %}
+    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        <th class="py-3.5 px-4">Job &amp; Queries</th>
+                        <th class="py-3.5 px-4">Platforms</th>
+                        <th class="py-3.5 px-4">Budget &amp; Ship</th>
+                        <th class="py-3.5 px-4">Keywords</th>
+                        <th class="py-3.5 px-4">Schedule</th>
+                        <th class="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80 text-sm">
+                    {% for job in jobs %}
+                        {% set is_running = job.id in running_ids %}
+                        {% include "partials/job_row.html" %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl p-12 text-center">
+        <h3 class="text-base font-semibold text-white">No search jobs configured</h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+            Click "+ New Search Job" to start monitoring Bazoš.cz, Sbazar.cz, and eBay with automatic currency conversion and anti-ban staggering.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

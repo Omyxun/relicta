@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Sign In — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="min-h-[75vh] flex items-center justify-center">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-mono font-bold">BS</span>
+            <div>
+                <h1 class="text-xl font-bold text-white">{{ app_name }}</h1>
+                <p class="text-xs text-slate-400">Self-Hosted Marketplace Deal Monitor</p>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="mb-5 rounded-xl bg-rose-500/10 border border-rose-500/30 px-4 py-3 text-sm text-rose-300">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/login" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Username</label>
+                <input type="text" name="username" required autofocus
+                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+                <input type="password" name="password" required
+                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+            </div>
+
+            <button type="submit"
+                    class="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold py-2.5 px-4 rounded-lg text-sm transition">
+                Sign In
+            </button>
+        </form>
+
+        {% if registration_open %}
+        <p class="mt-6 text-center text-xs text-slate-400">
+            Need an account?
+            <a href="/register" class="text-sky-400 hover:underline font-medium">Create account</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

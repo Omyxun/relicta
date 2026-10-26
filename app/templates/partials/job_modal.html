@@ -1,0 +1,147 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl my-8">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+            <h2 class="text-lg font-bold text-white">
+                {% if job %}Edit Search Job — {{ job.name }}{% else %}Create New Search Job{% endif %}
+            </h2>
+            <button type="button"
+                    onclick="document.getElementById('modal-container').innerHTML = ''"
+                    class="text-slate-400 hover:text-white text-sm px-2 py-1 rounded">
+                ✕
+            </button>
+        </div>
+
+        {% if error %}
+        <div class="mb-4 rounded-xl bg-rose-500/10 border border-rose-500/30 px-4 py-3 text-xs text-rose-300">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form hx-post="{% if job %}/jobs/{{ job.id }}{% else %}/jobs{% endif %}"
+              hx-target="#modal-container"
+              hx-swap="innerHTML"
+              class="space-y-4">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Job Name</label>
+                    <input type="text" name="name" required
+                           value="{{ job.name if job else '' }}"
+                           placeholder="e.g., ThinkPad T14 / MacBook 14 Deals"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Poll Interval (seconds)</label>
+                    <input type="number" name="poll_interval_seconds" min="60" step="30" required
+                           value="{{ job.poll_interval_seconds if job else 300 }}"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1.5">Target Marketplaces</label>
+                <div class="flex flex-wrap gap-3">
+                    {% for p in available_platforms %}
+                    <label class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-200 cursor-pointer">
+                        <input type="checkbox" name="platforms" value="{{ p }}"
+                               {% if (job and p in job.platforms) or (not job and p in ['bazos', 'sbazar']) %}checked{% endif %}
+                               class="rounded border-slate-600 text-sky-500 focus:ring-sky-500" />
+                        <span class="uppercase font-semibold">{{ p }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Search Queries (one per line or comma-separated)
+                </label>
+                <textarea name="search_queries_raw" rows="2" required
+                          placeholder="thinkpad t14, notebook 14, elitebook 845"
+                          class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500">{{ job.search_queries | join(', ') if job else '' }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Min Price Floor ({{ current_user.base_currency }})
+                    </label>
+                    <input type="number" name="min_price" step="1" min="0" required
+                           value="{{ job.min_price if job else 500 }}"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Max Total Budget ({{ current_user.base_currency }})
+                    </label>
+                    <input type="number" name="max_price" step="1" min="1" required
+                           value="{{ job.max_price if job else 12000 }}"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">
+                        Shipping Buffer ({{ current_user.base_currency }})
+                    </label>
+                    <input type="number" name="shipping_buffer" step="1" min="0" required
+                           value="{{ job.shipping_buffer if job else 85 }}"
+                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label class="flex items-start gap-2.5 p-3 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
+                    <input type="checkbox" name="allow_unpriced" value="1"
+                           {% if job and job.allow_unpriced %}checked{% endif %}
+                           class="mt-0.5 rounded border-slate-600 text-sky-500" />
+                    <div class="text-xs">
+                        <div class="font-semibold text-slate-200">Allow "Dohodou" / Unpriced Ads</div>
+                        <div class="text-slate-400">Requires strict keyword match; grouped separately at bottom of digests.</div>
+                    </div>
+                </label>
+
+                <label class="flex items-start gap-2.5 p-3 rounded-lg bg-slate-950 border border-slate-800 cursor-pointer">
+                    <input type="checkbox" name="require_shipping" value="1"
+                           {% if job and job.require_shipping %}checked{% endif %}
+                           class="mt-0.5 rounded border-slate-600 text-sky-500" />
+                    <div class="text-xs">
+                        <div class="font-semibold text-slate-200">Require Shipping Available</div>
+                        <div class="text-slate-400">Discards ads containing "pouze osobní", "neposílám", etc.</div>
+                    </div>
+                </label>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Required Keywords (comma-separated AND groups, pipe <code class="text-sky-400">|</code> for OR)
+                </label>
+                <input type="text" name="required_keywords"
+                       value="{{ job.required_keywords if job else '' }}"
+                       placeholder="e.g., 16gb|32gb, ssd|nvme, oled|ips"
+                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-sky-500" />
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">
+                    Excluded Keywords (per-job blacklist)
+                </label>
+                <textarea name="excluded_keywords" rows="2"
+                          class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-sky-500">{{ job.excluded_keywords if job else default_excluded }}</textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button type="button"
+                        onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-xs font-semibold text-slate-950">
+                    {% if job %}Save Changes{% else %}Create Search Job{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

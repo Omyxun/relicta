@@ -1,0 +1,19 @@
+{% if oob %}
+<div hx-swap-oob="beforeend:#toast-container">
+{% endif %}
+    <div onclick="this.remove()"
+         class="pointer-events-auto cursor-pointer rounded-xl px-4 py-3 shadow-xl border text-xs font-medium flex items-center justify-between gap-3 transition
+                {% if level == 'error' %}bg-rose-950/95 border-rose-500/40 text-rose-200
+                {% elif level == 'info' %}bg-slate-900/95 border-sky-500/40 text-sky-200
+                {% else %}bg-emerald-950/95 border-emerald-500/40 text-emerald-200{% endif %}">
+        <span>{{ message }}</span>
+        <span class="text-slate-400 hover:text-white">&times;</span>
+        <script>
+            (function(el) {
+                setTimeout(() => { if (el && el.parentNode) el.remove(); }, 4500);
+            })(document.currentScript.parentElement);
+        </script>
+    </div>
+{% if oob %}
+</div>
+{% endif %}

@@ -1,0 +1,114 @@
+<tr id="job-row-{{ job.id }}" class="hover:bg-slate-800/30 transition">
+    <td class="py-4 px-4 align-top">
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full {% if not job.is_active %}bg-slate-600{% elif is_running %}bg-sky-400 animate-ping{% else %}bg-emerald-400{% endif %}"></span>
+            <span class="font-semibold text-white">{{ job.name }}</span>
+            <span class="text-xs text-slate-500">({{ job.total_matches_count }} matches)</span>
+        </div>
+        <div class="mt-1.5 flex flex-wrap gap-1">
+            {% for q in job.search_queries %}
+            <span class="px-2 py-0.5 text-[11px] font-mono bg-slate-950 border border-slate-800 rounded text-slate-300">
+                "{{ q }}"
+            </span>
+            {% endfor %}
+        </div>
+    </td>
+
+    <td class="py-4 px-4 align-top">
+        <div class="flex flex-wrap gap-1">
+            {% for p in job.platforms %}
+            <span class="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                {{ p }}
+            </span>
+            {% endfor %}
+        </div>
+    </td>
+
+    <td class="py-4 px-4 align-top text-xs">
+        <div class="font-semibold text-slate-200">
+            {{ job.min_price | format_currency(current_user.base_currency) }} &ndash; {{ job.max_price | format_currency(current_user.base_currency) }}
+        </div>
+        <div class="text-slate-400 mt-0.5">
+            +{{ job.shipping_buffer | format_currency(current_user.base_currency) }} ship buffer
+        </div>
+        <div class="mt-1 flex flex-wrap gap-1">
+            {% if job.allow_unpriced %}
+            <span class="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Dohodou OK</span>
+            {% endif %}
+            {% if job.require_shipping %}
+            <span class="px-1.5 py-0.5 text-[10px] rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">Ship Required</span>
+            {% endif %}
+        </div>
+    </td>
+
+    <td class="py-4 px-4 align-top text-xs max-w-xs">
+        {% if job.required_keywords %}
+        <div class="text-emerald-300 truncate" title="{{ job.required_keywords }}">
+            <strong>REQ:</strong> {{ job.required_keywords }}
+        </div>
+        {% else %}
+        <div class="text-slate-500">No required keywords</div>
+        {% endif %}
+
+        {% if job.excluded_keywords %}
+        <div class="text-rose-300/80 truncate mt-0.5" title="{{ job.excluded_keywords }}">
+            <strong>EXCL:</strong> {{ job.excluded_keywords }}
+        </div>
+        {% endif %}
+    </td>
+
+    <td class="py-4 px-4 align-top text-xs text-slate-300">
+        <div>Every <span class="font-mono">{{ job.poll_interval_seconds }}s</span></div>
+        <div class="text-slate-500 mt-0.5">Last: {{ job.last_run_at | time_ago }}</div>
+        {% if job.is_active %}
+        <div class="text-sky-400 mt-0.5">Next: {{ job.next_run_at | time_ago }}</div>
+        {% else %}
+        <div class="text-amber-400 mt-0.5">Paused</div>
+        {% endif %}
+    </td>
+
+    <td class="py-4 px-4 align-top text-right whitespace-nowrap">
+        <div class="inline-flex items-center gap-1.5">
+            <button type="button"
+                    hx-post="/jobs/{{ job.id }}/run"
+                    hx-target="#job-row-{{ job.id }}"
+                    hx-swap="outerHTML"
+                    title="Queue immediate manual scan"
+                    class="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500 hover:text-slate-950 text-sky-300 border border-sky-500/30 text-xs font-semibold transition">
+                Run Now
+            </button>
+
+            <button type="button"
+                    hx-post="/jobs/{{ job.id }}/toggle"
+                    hx-target="#job-row-{{ job.id }}"
+                    hx-swap="outerHTML"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
+                {% if job.is_active %}Pause{% else %}Resume{% endif %}
+            </button>
+
+            <button type="button"
+                    hx-get="/jobs/{{ job.id }}/edit"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
+                Edit
+            </button>
+
+            <button type="button"
+                    hx-post="/jobs/{{ job.id }}/clone"
+                    title="Duplicate job"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">
+                Clone
+            </button>
+
+            <button type="button"
+                    hx-delete="/jobs/{{ job.id }}"
+                    hx-target="#job-row-{{ job.id }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="Delete search job '{{ job.name }}' and all its seen listings?"
+                    class="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 border border-rose-500/20 text-xs font-medium transition">
+                Delete
+            </button>
+        </div>
+    </td>
+</tr>
