@@ -1,16 +1,17 @@
 import asyncio
 import logging
+import re
 import time
 from typing import Any, Optional
 
 import httpx
+from selectolax.lexbor import LexborHTMLParser, LexborNode
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.models import SearchJob
 from app.scrapers.base import (
     BaseScraper,
-    ScraperConfigError,
     ScraperError,
     ScraperParseError,
 )
@@ -20,13 +21,18 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 EBAY_OAUTH_SCOPE = "https://api.ebay.com/oauth/api_scope"
+EBAY_WEB_SEARCH_URL = "https://www.ebay.de/sch/i.html"
+EBAY_ITEM_ID_RE = re.compile(r"/itm/(?:[^/]+/)?(\d+)")
+EBAY_PRICE_NUM_RE = re.compile(r"(\d[\d\.,]*)")
 
 
 class EbayScraper(BaseScraper):
     """
-    Integrates with the official eBay Browse API (`buy/browse/v1/item_summary/search`).
-    Automatically acquires, caches, and renews OAuth2 Client Credentials tokens
-    and extracts explicit shipping costs to the user's configured country (default CZ).
+    Hybrid eBay adapter:
+    - Uses the official eBay Browse API (`buy/browse/v1/item_summary/search`) when
+      EBAY_CLIENT_ID and EBAY_CLIENT_SECRET are configured in .env.
+    - Automatically falls back to direct HTML scraping on ebay.de (Newly Listed,
+      Buy It Now, shipping to CZ) when API credentials are not configured.
     """
 
     platform_name = "ebay"
@@ -37,13 +43,197 @@ class EbayScraper(BaseScraper):
         self._access_token: Optional[str] = None
         self._token_expires_at: float = 0.0
 
-    async def _get_valid_access_token(self) -> str:
-        if not settings.EBAY_CLIENT_ID or not settings.EBAY_CLIENT_SECRET:
-            raise ScraperConfigError(
-                self.platform_name,
-                "EBAY_CLIENT_ID and EBAY_CLIENT_SECRET must be configured in .env to use EbayScraper",
-            )
+    @property
+    def has_api_credentials(self) -> bool:
+        return bool(settings.EBAY_CLIENT_ID.strip() and settings.EBAY_CLIENT_SECRET.strip())
 
+    async def search(
+        self,
+        job: SearchJob,
+        session: Optional[AsyncSession] = None,
+        base_currency: str = "CZK",
+    ) -> list[ScrapedListing]:
+        queries = [q.strip() for q in (job.search_queries or []) if q and q.strip()]
+        if not queries:
+            return []
+
+        deduped_by_id: dict[str, ScrapedListing] = {}
+
+        for idx, query_str in enumerate(queries):
+            if idx > 0:
+                await self.sleep_jitter()
+
+            if self.has_api_credentials:
+                items = await self._search_single_query_api(query_str)
+            else:
+                items = await self._search_single_query_html(query_str)
+
+            for item in items:
+                if item.external_id not in deduped_by_id:
+                    deduped_by_id[item.external_id] = item
+
+        return list(deduped_by_id.values())
+
+    # -------------------------------------------------------------------------
+    # Keyless Web Scraping Fallback (ebay.de)
+    # -------------------------------------------------------------------------
+
+    async def _search_single_query_html(self, query_str: str) -> list[ScrapedListing]:
+        params: dict[str, str | int | float] = {
+            "_nkw": query_str,
+            "_sop": "10",        # Newly listed
+            "LH_BIN": "1",       # Buy It Now (Fixed price)
+            "_fcid": "56",       # Ship to Czech Republic (country code 56 on eBay)
+            "_ipg": "60",
+        }
+        headers = self.build_browser_headers(
+            referer="https://www.ebay.de/",
+            extra_headers={"Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7"},
+        )
+        response = await self.request("GET", EBAY_WEB_SEARCH_URL, params=params, headers=headers)
+        return self._parse_web_html(response.text)
+
+    def _parse_web_html(self, html: str) -> list[ScrapedListing]:
+        if not html or len(html) < 500:
+            raise ScraperParseError(self.platform_name, "Empty HTML response from eBay web search")
+
+        tree = LexborHTMLParser(html)
+        cards = tree.css("li.s-item, div.s-item__wrapper")
+        if not cards:
+            return []
+
+        listings: list[ScrapedListing] = []
+        for card in cards:
+            parsed = self._parse_web_card(card)
+            if parsed is not None:
+                listings.append(parsed)
+        return listings
+
+    def _parse_web_card(self, card: LexborNode) -> Optional[ScrapedListing]:
+        link_node = card.css_first("a.s-item__link")
+        if link_node is None:
+            return None
+
+        href = (link_node.attributes.get("href") or "").strip()
+        id_match = EBAY_ITEM_ID_RE.search(href)
+        if not id_match:
+            return None
+        external_id = id_match.group(1)
+
+        # Skip eBay's hidden dummy header item ("Shop on eBay" / id 123456)
+        if external_id == "123456":
+            return None
+
+        title_node = card.css_first("div.s-item__title span[role='heading']") or card.css_first("div.s-item__title")
+        if title_node is None:
+            return None
+        title = title_node.text(strip=True)
+        for prefix in ("Neues Angebot", "New Listing"):
+            if title.startswith(prefix):
+                title = title[len(prefix):].strip()
+        if not title or title.lower() == "shop on ebay":
+            return None
+
+        clean_url = f"https://www.ebay.de/itm/{external_id}"
+
+        price_node = card.css_first("span.s-item__price")
+        price_text = price_node.text(strip=True) if price_node else ""
+        # Ignore price range listings (e.g., "EUR 10,00 bis EUR 45,00")
+        if " bis " in price_text.lower() or " to " in price_text.lower():
+            return None
+        raw_price, raw_currency = self._parse_ebay_money(price_text)
+        if raw_price is None or raw_price <= 0:
+            return None
+
+        ship_node = (
+            card.css_first("span.s-item__shipping")
+            or card.css_first("span.s-item__logisticsCost")
+        )
+        ship_text = ship_node.text(strip=True) if ship_node else ""
+        shipping_price = 0.0
+        shipping_currency = raw_currency
+        if ship_text:
+            low_ship = ship_text.lower()
+            if "kostenlos" in low_ship or "free" in low_ship or "gratis" in low_ship:
+                shipping_price = 0.0
+            else:
+                parsed_ship, parsed_ship_curr = self._parse_ebay_money(ship_text)
+                if parsed_ship is not None:
+                    shipping_price = parsed_ship
+                    shipping_currency = parsed_ship_curr
+
+        img_node = card.css_first("div.s-item__image-wrapper img") or card.css_first("img")
+        image_url: Optional[str] = None
+        if img_node is not None:
+            image_url = (
+                img_node.attributes.get("src")
+                or img_node.attributes.get("data-src")
+                or ""
+            ).strip() or None
+
+        cond_node = card.css_first("span.SECONDARY_INFO")
+        condition = cond_node.text(strip=True) if cond_node else None
+
+        loc_node = card.css_first("span.s-item__location") or card.css_first("span.s-item__itemLocation")
+        location = loc_node.text(strip=True) if loc_node else "eBay EU"
+
+        return ScrapedListing(
+            platform=self.platform_name,
+            external_id=external_id,
+            title=title,
+            url=clean_url,
+            raw_price=raw_price,
+            raw_currency=raw_currency,
+            shipping_price=shipping_price,
+            shipping_currency=shipping_currency,
+            is_unpriced=False,
+            snippet=condition or "",
+            full_description=f"{title}\n{condition or ''}",
+            image_url=image_url,
+            location=location,
+            condition=condition,
+        )
+
+    @staticmethod
+    def _parse_ebay_money(text: str) -> tuple[Optional[float], str]:
+        if not text:
+            return None, "EUR"
+
+        upper = text.upper()
+        currency = "EUR"
+        if "USD" in upper or "$" in upper:
+            currency = "USD"
+        elif "GBP" in upper or "£" in upper:
+            currency = "GBP"
+        elif "PLN" in upper:
+            currency = "PLN"
+        elif "CZK" in upper or "KČ" in upper:
+            currency = "CZK"
+
+        match = EBAY_PRICE_NUM_RE.search(text)
+        if not match:
+            return None, currency
+
+        num_str = match.group(1)
+        # Convert German/European decimal format (e.g., "1.250,50" -> "1250.50")
+        if "," in num_str and "." in num_str:
+            if num_str.rfind(",") > num_str.rfind("."):
+                num_str = num_str.replace(".", "").replace(",", ".")
+            else:
+                num_str = num_str.replace(",", "")
+        elif "," in num_str:
+            num_str = num_str.replace(",", ".")
+
+        try:
+            return float(num_str), currency
+        except ValueError:
+            return None, currency
+
+    # -------------------------------------------------------------------------
+    # Official eBay Browse API (used when EBAY_CLIENT_ID & SECRET are set)
+    # -------------------------------------------------------------------------
+
+    async def _get_valid_access_token(self) -> str:
         now = time.monotonic()
         if self._access_token and now < (self._token_expires_at - 120.0):
             return self._access_token
@@ -86,33 +276,9 @@ class EbayScraper(BaseScraper):
 
             self._access_token = token
             self._token_expires_at = time.monotonic() + float(expires_in)
-            logger.info("[ebay] Acquired new OAuth2 token (valid for %ds)", expires_in)
             return self._access_token
 
-    async def search(
-        self,
-        job: SearchJob,
-        session: Optional[AsyncSession] = None,
-        base_currency: str = "CZK",
-    ) -> list[ScrapedListing]:
-        queries = [q.strip() for q in (job.search_queries or []) if q and q.strip()]
-        if not queries:
-            return []
-
-        deduped_by_id: dict[str, ScrapedListing] = {}
-
-        for idx, query_str in enumerate(queries):
-            if idx > 0:
-                await self.sleep_jitter()
-
-            items = await self._search_single_query(query_str)
-            for item in items:
-                if item.external_id not in deduped_by_id:
-                    deduped_by_id[item.external_id] = item
-
-        return list(deduped_by_id.values())
-
-    async def _search_single_query(self, query_str: str) -> list[ScrapedListing]:
+    async def _search_single_query_api(self, query_str: str) -> list[ScrapedListing]:
         token = await self._get_valid_access_token()
         ship_to_country = settings.EBAY_DEFAULT_SHIP_TO_COUNTRY.strip().upper() or "CZ"
 
@@ -139,25 +305,17 @@ class EbayScraper(BaseScraper):
             headers=headers,
         )
 
-        try:
-            payload: dict[str, Any] = response.json()
-        except ValueError as exc:
-            raise ScraperParseError(
-                self.platform_name, f"Invalid JSON from eBay Browse API: {exc}"
-            ) from exc
-
+        payload: dict[str, Any] = response.json()
         summaries = payload.get("itemSummaries")
         if not summaries or not isinstance(summaries, list):
             return []
 
         listings: list[ScrapedListing] = []
         for raw_summary in summaries:
-            if not isinstance(raw_summary, dict):
-                continue
-            parsed = self._parse_item_summary(raw_summary)
-            if parsed is not None:
-                listings.append(parsed)
-
+            if isinstance(raw_summary, dict):
+                parsed = self._parse_item_summary(raw_summary)
+                if parsed is not None:
+                    listings.append(parsed)
         return listings
 
     def _parse_item_summary(self, item: dict[str, Any]) -> Optional[ScrapedListing]:
@@ -189,32 +347,8 @@ class EbayScraper(BaseScraper):
         image_obj = item.get("image")
         if isinstance(image_obj, dict) and image_obj.get("imageUrl"):
             image_url = str(image_obj["imageUrl"]).strip()
-        else:
-            thumbs = item.get("thumbnailImages")
-            if isinstance(thumbs, list) and thumbs and isinstance(thumbs[0], dict):
-                image_url = str(thumbs[0].get("imageUrl") or "").strip() or None
 
         condition = str(item.get("condition") or "").strip() or None
-
-        seller_feedback: Optional[float] = None
-        seller_obj = item.get("seller")
-        if isinstance(seller_obj, dict) and seller_obj.get("feedbackPercentage") is not None:
-            try:
-                seller_feedback = float(seller_obj["feedbackPercentage"])
-            except (TypeError, ValueError):
-                seller_feedback = None
-
-        location: Optional[str] = None
-        loc_obj = item.get("itemLocation")
-        if isinstance(loc_obj, dict):
-            country = str(loc_obj.get("country") or "").strip()
-            postal = str(loc_obj.get("postalCode") or "").strip()
-            location = f"{country} {postal}".strip() or None
-
-        short_desc = str(item.get("shortDescription") or "").strip()
-        snippet_parts = [p for p in (condition, short_desc) if p]
-        snippet = " | ".join(snippet_parts)
-
         return ScrapedListing(
             platform=self.platform_name,
             external_id=item_id,
@@ -225,12 +359,10 @@ class EbayScraper(BaseScraper):
             shipping_price=shipping_price,
             shipping_currency=shipping_currency,
             is_unpriced=is_unpriced,
-            snippet=snippet,
-            full_description=snippet,
+            snippet=condition or "",
+            full_description=condition or "",
             image_url=image_url,
-            location=location,
             condition=condition,
-            seller_feedback_score=seller_feedback,
         )
 
     @staticmethod
@@ -243,14 +375,11 @@ class EbayScraper(BaseScraper):
 
         lowest_cost: Optional[float] = None
         lowest_currency: Optional[str] = None
-
         for opt in shipping_options:
             if not isinstance(opt, dict):
                 continue
-            cost_type = str(opt.get("shippingCostType") or "").upper()
-            if cost_type == "FREE":
+            if str(opt.get("shippingCostType") or "").upper() == "FREE":
                 return 0.0, default_currency
-
             cost_obj = opt.get("shippingCost")
             if isinstance(cost_obj, dict) and cost_obj.get("value") is not None:
                 try:
@@ -261,5 +390,4 @@ class EbayScraper(BaseScraper):
                         lowest_currency = curr
                 except (TypeError, ValueError):
                     continue
-
         return lowest_cost, lowest_currency

@@ -22,13 +22,18 @@ router = APIRouter(tags=["dashboard"])
 async def dashboard_view(
     request: Request,
     platform: Optional[str] = Query(default=None),
-    job_id: Optional[int] = Query(default=None),
+    job_id: Optional[str] = Query(default=None),
     pricing: Optional[str] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> HTMLResponse:
     now = datetime.now(timezone.utc)
     since_24h = now - timedelta(hours=24)
+
+    # Safely parse job_id when HTML <select> submits ?job_id= (empty string)
+    parsed_job_id: Optional[int] = None
+    if job_id and job_id.strip().isdigit():
+        parsed_job_id = int(job_id.strip())
 
     # 1. User Jobs & Active Count
     jobs_stmt = (
@@ -112,8 +117,8 @@ async def dashboard_view(
 
     if platform and platform.strip():
         feed_stmt = feed_stmt.where(SeenListing.platform == platform.strip().lower())
-    if job_id is not None:
-        feed_stmt = feed_stmt.where(SeenListing.job_id == job_id)
+    if parsed_job_id is not None:
+        feed_stmt = feed_stmt.where(SeenListing.job_id == parsed_job_id)
     if pricing == "priced":
         feed_stmt = feed_stmt.where(SeenListing.is_unpriced.is_(False))
     elif pricing == "unpriced":
@@ -139,7 +144,7 @@ async def dashboard_view(
             "scraper_statuses": scraper_statuses,
             "recent_matches": recent_matches,
             "selected_platform": platform or "",
-            "selected_job_id": job_id,
+            "selected_job_id": parsed_job_id,
             "selected_pricing": pricing or "",
             "fx_rates": currency_service.get_all_rates(),
         },
