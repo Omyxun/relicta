@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     PRICE_DROP_MIN_PERCENT: float = 1.0
     PRICE_DROP_MIN_ABSOLUTE_CZK: float = 50.0
 
+    # Facebook Marketplace Settings (cookie-based authentication)
+    FB_COOKIE_C_USER: str = ""
+    FB_COOKIE_XS: str = ""
+    FB_COOKIE_DATR: str = ""
+    FB_MARKETPLACE_LOCATION: str = "prague"
+
     # eBay API Settings
     EBAY_CLIENT_ID: str = ""
     EBAY_CLIENT_SECRET: str = ""

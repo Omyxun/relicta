@@ -10,12 +10,14 @@ from app.scrapers.base import (
 )
 from app.scrapers.bazos import BazosScraper
 from app.scrapers.ebay import EbayScraper
+from app.scrapers.facebook import FacebookMarketplaceScraper
 from app.scrapers.sbazar import SbazarScraper
 
 _SCRAPER_REGISTRY: dict[str, BaseScraper] = {
     BazosScraper.platform_name: BazosScraper(),
     SbazarScraper.platform_name: SbazarScraper(),
     EbayScraper.platform_name: EbayScraper(),
+    FacebookMarketplaceScraper.platform_name: FacebookMarketplaceScraper(),
 }
 
 
@@ -44,6 +46,7 @@ __all__ = [
     "BaseScraper",
     "BazosScraper",
     "EbayScraper",
+    "FacebookMarketplaceScraper",
     "SbazarScraper",
     "ScraperConfigError",
     "ScraperError",

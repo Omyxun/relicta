@@ -1,4 +1,3 @@
-cat << 'EOF' > .gitignore
 # Environment & secrets
 .env
 *.env
@@ -37,6 +36,13 @@ share/python-wheels/
 .installed.cfg
 *.egg
 
+# Test & coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.hypothesis/
+
 # Virtual environments
 venv/
 .venv/
@@ -50,4 +56,3 @@ ENV/
 *.swo
 *~
 .DS_Store
-EOF
