@@ -11,3 +11,4 @@ argon2-cffi==23.1.0
 httpx[http2]==0.28.1
 selectolax==0.3.27
 aiosmtplib==3.0.2
+curl_cffi>=0.7.0

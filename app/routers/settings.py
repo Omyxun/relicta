@@ -22,6 +22,7 @@ async def settings_page(
     request: Request,
     current_user: User = Depends(get_current_user),
 ) -> HTMLResponse:
+    base_curr = current_user.base_currency or "CZK"
     return templates.TemplateResponse(
         request=request,
         name="settings.html",
@@ -29,6 +30,7 @@ async def settings_page(
             "current_user": current_user,
             "supported_currencies": settings.SUPPORTED_CURRENCIES,
             "fx_rates": currency_service.get_all_rates(),
+            "fx_rates_to_base": currency_service.get_rates_to_base(base_curr),
             "default_ntfy_url": settings.NTFY_DEFAULT_SERVER_URL,
             "has_shared_tg_token": bool(settings.TELEGRAM_DEFAULT_BOT_TOKEN.strip()),
             "has_smtp_configured": bool(settings.SMTP_HOST.strip()),

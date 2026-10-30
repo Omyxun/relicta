@@ -2,63 +2,73 @@
 {% block title %}Create Account — {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="min-h-[75vh] flex items-center justify-center">
-    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+<div class="min-h-[75vh] flex items-center justify-center font-sans">
+    <div class="w-full max-w-sm bg-[#121215] border border-white/[0.08] rounded-xl shadow-2xl p-7 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
         <div class="mb-6">
-            <h1 class="text-xl font-bold text-white">Create Account</h1>
+            <h1 class="text-xl font-semibold text-white tracking-tight">Create Account</h1>
             {% if is_first_user %}
-            <p class="mt-1 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+            <p class="mt-1.5 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
                 First registered account will automatically be granted <strong>Administrator</strong> privileges.
             </p>
             {% else %}
-            <p class="text-xs text-slate-400 mt-1">Set up your profile and base currency.</p>
+            <p class="text-xs text-zinc-400 mt-1">Set up your profile and base currency</p>
             {% endif %}
         </div>
 
         {% if error %}
-        <div class="mb-5 rounded-xl bg-rose-500/10 border border-rose-500/30 px-4 py-3 text-sm text-rose-300">
+        <div class="mb-5 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3.5 py-2.5 text-xs text-rose-300">
             {{ error }}
         </div>
         {% endif %}
 
         <form action="/register" method="POST" class="space-y-4">
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Username</label>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Username</label>
                 <input type="text" name="username" required minlength="3" maxlength="64" autofocus
-                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+                       placeholder="Choose a username"
+                       class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition" />
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Preferred Base Currency</label>
-                <select name="base_currency"
-                        class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500">
-                    {% for code in supported_currencies %}
-                    <option value="{{ code }}" {% if code == default_currency %}selected{% endif %}>{{ code }}</option>
-                    {% endfor %}
-                </select>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Preferred Base Currency</label>
+                <div class="relative">
+                    <select name="base_currency"
+                            class="w-full appearance-none bg-zinc-950/90 border border-white/[0.08] hover:border-white/[0.15] rounded-lg text-sm text-zinc-200 pl-3.5 pr-8 py-2.5 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition cursor-pointer">
+                        {% for code in supported_currencies %}
+                        <option value="{{ code }}" {% if code == default_currency %}selected{% endif %}>{{ code }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 6l4 4 4-4" />
+                        </svg>
+                    </div>
+                </div>
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Password (min. 8 characters)</label>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Password (min. 8 characters)</label>
                 <input type="password" name="password" required minlength="8"
-                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+                       placeholder="Create a secure password"
+                       class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition" />
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Confirm Password</label>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Confirm Password</label>
                 <input type="password" name="password_confirm" required minlength="8"
-                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+                       placeholder="Confirm your password"
+                       class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition" />
             </div>
 
             <button type="submit"
-                    class="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold py-2.5 px-4 rounded-lg text-sm transition">
+                    class="w-full mt-2 bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-2.5 px-4 rounded-lg text-xs shadow-sm transition">
                 Create Account
             </button>
         </form>
 
-        <p class="mt-6 text-center text-xs text-slate-400">
+        <p class="mt-5 text-center text-xs text-zinc-400">
             Already registered?
-            <a href="/login" class="text-sky-400 hover:underline font-medium">Sign in</a>
+            <a href="/login" class="text-zinc-200 hover:text-white underline font-medium">Sign in</a>
         </p>
     </div>
 </div>

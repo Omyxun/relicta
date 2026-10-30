@@ -3,10 +3,11 @@
 
 {% block content %}
 <div class="space-y-6">
+    <!-- Header & Primary CTA -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-xl font-bold text-white">Search Jobs</h1>
-            <p class="text-xs text-slate-400 mt-0.5">
+            <h1 class="text-xl font-bold text-white tracking-tight">Search Jobs</h1>
+            <p class="text-xs text-zinc-400 mt-0.5">
                 Configure multi-query searches, price floors, shipping buffers, and two-stage keyword rules.
             </p>
         </div>
@@ -15,26 +16,30 @@
                 hx-get="/jobs/new"
                 hx-target="#modal-container"
                 hx-swap="innerHTML"
-                class="inline-flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold px-4 py-2.5 rounded-lg text-xs transition">
-            <span>+ New Search Job</span>
+                class="bg-zinc-100 text-zinc-950 hover:bg-white font-medium text-xs px-3.5 py-2 rounded-md shadow-sm inline-flex items-center gap-1.5 transition shrink-0">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3v10M3 8h10" />
+            </svg>
+            <span>New Search Job</span>
         </button>
     </div>
 
     {% if jobs %}
-    <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+    <!-- Search Jobs Data Table -->
+    <div class="bg-[#121215] border border-white/[0.07] rounded-lg overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                        <th class="py-3.5 px-4">Job &amp; Queries</th>
-                        <th class="py-3.5 px-4">Platforms</th>
-                        <th class="py-3.5 px-4">Budget &amp; Ship</th>
-                        <th class="py-3.5 px-4">Keywords</th>
-                        <th class="py-3.5 px-4">Schedule</th>
-                        <th class="py-3.5 px-4 text-right">Actions</th>
+                    <tr class="bg-zinc-950/60 border-b border-white/[0.07] text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+                        <th class="py-3 px-4 font-medium">Job &amp; Queries</th>
+                        <th class="py-3 px-4 font-medium">Platforms</th>
+                        <th class="py-3 px-4 font-medium">Budget &amp; Ship</th>
+                        <th class="py-3 px-4 font-medium">Keywords</th>
+                        <th class="py-3 px-4 font-medium">Schedule</th>
+                        <th class="py-3 px-4 font-medium text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-800/80 text-sm">
+                <tbody class="divide-y divide-white/[0.06] text-sm">
                     {% for job in jobs %}
                         {% set is_running = job.id in running_ids %}
                         {% include "partials/job_row.html" %}
@@ -44,11 +49,24 @@
         </div>
     </div>
     {% else %}
-    <div class="bg-slate-900/60 border border-dashed border-slate-800 rounded-2xl p-12 text-center">
-        <h3 class="text-base font-semibold text-white">No search jobs configured</h3>
-        <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            Click "+ New Search Job" to start monitoring Bazoš.cz, Sbazar.cz, and eBay with automatic currency conversion and anti-ban staggering.
+    <!-- Empty State -->
+    <div class="bg-[#121215] border border-dashed border-white/[0.08] rounded-xl p-12 text-center">
+        <h3 class="text-sm font-medium text-zinc-200">No search jobs configured</h3>
+        <p class="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
+            Click "+ New Search Job" to start monitoring Bazoš.cz, Sbazar.cz, eBay, and Facebook Marketplace with automatic currency conversion and anti-ban staggering.
         </p>
+        <div class="mt-5">
+            <button type="button"
+                    hx-get="/jobs/new"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="bg-zinc-100 text-zinc-950 hover:bg-white font-medium text-xs px-3.5 py-2 rounded-md shadow-sm inline-flex items-center gap-1.5 transition">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3v10M3 8h10" />
+                </svg>
+                <span>New Search Job</span>
+            </button>
+        </div>
     </div>
     {% endif %}
 </div>
