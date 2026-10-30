@@ -7,7 +7,7 @@
     <div class="border-b border-white/[0.07] pb-6">
         <h1 class="text-xl font-bold text-white tracking-tight">Settings &amp; Preferences</h1>
         <p class="text-xs text-zinc-400 mt-1">
-            Manage appearance themes, currency normalization, and notification delivery pipelines.
+            Manage appearance themes, marketplace API integrations, currency normalization, and notification delivery pipelines.
         </p>
     </div>
 
@@ -126,7 +126,135 @@
             </div>
         </section>
 
-        <!-- Section 3: Telegram Digest Alerts -->
+        <!-- Section 3: eBay Marketplace API Integration -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8" id="ebay-section">
+            <div class="md:col-span-4 space-y-1">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">eBay API Integration</h2>
+                    {% if has_ebay_credentials %}
+                    <span class="inline-flex items-center gap-1 font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        Browse API
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded">
+                        Web Fallback
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Configure official eBay Browse API credentials (OAuth2 Client Credentials). When configured, Relicta uses the official API for guaranteed uptime and rate limits. Saved directly to <code class="font-mono text-zinc-300">.env</code>.
+                </p>
+                <div class="pt-1 text-[11px]">
+                    {% if has_ebay_credentials %}
+                    <span class="text-emerald-400 font-medium">✓ Official Browse API credentials active in .env.</span>
+                    {% else %}
+                    <span class="text-zinc-500 font-medium">Leave blank to use automatic keyless EU web scraping.</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-4">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <div class="text-xs font-medium text-zinc-200">eBay Developer API Credentials</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">App ID and Cert ID from developer.ebay.com</div>
+                    </div>
+
+                    <button type="button"
+                            hx-post="/settings/test/ebay"
+                            hx-include="#ebay-section input, #ebay-section select"
+                            hx-target="#toast-container"
+                            hx-swap="beforeend"
+                            class="bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-md transition shrink-0 inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 8A6 6 0 1 1 8 2" />
+                            <path d="M8 5v3l2 2" />
+                        </svg>
+                        <span>Test Credentials</span>
+                    </button>
+                </div>
+
+                <!-- Clean Accordion Guide -->
+                <details class="group bg-zinc-950/70 border border-white/[0.08] rounded-lg p-3.5 text-xs text-zinc-300">
+                    <summary class="cursor-pointer font-medium text-zinc-300 hover:text-white flex items-center justify-between list-none select-none">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-zinc-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="8" cy="8" r="6" />
+                                <path d="M8 7v4M8 5h.01" />
+                            </svg>
+                            <span>How to get free eBay API credentials (developer.ebay.com)</span>
+                        </div>
+                        <svg class="w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 group-open:rotate-90 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 4l4 4-4 4" />
+                        </svg>
+                    </summary>
+                    <ol class="list-decimal list-inside space-y-1.5 mt-3 pt-3 border-t border-white/[0.06] text-zinc-400">
+                        <li>Register for a free account at <strong class="text-zinc-300">developer.ebay.com</strong>.</li>
+                        <li>Create a new application under <strong class="text-zinc-300">User Keys (Production)</strong>.</li>
+                        <li>Copy the <strong class="text-zinc-300">App ID (Client ID)</strong> and <strong class="text-zinc-300">Cert ID (Client Secret)</strong>.</li>
+                        <li>Paste them below and click <strong class="text-zinc-300">Save All Settings</strong>. Credentials will be written to <code class="font-mono text-zinc-200 bg-white/[0.04] px-1 py-0.5 rounded">.env</code>.</li>
+                    </ol>
+                </details>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            eBay Client ID (App ID)
+                        </label>
+                        <input type="text" name="ebay_client_id"
+                               value="{{ ebay_client_id or '' }}"
+                               placeholder="e.g., YourName-Relicta-PRD-123456"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            eBay Client Secret (Cert ID)
+                        </label>
+                        <input type="password" name="ebay_client_secret"
+                               value="{{ ebay_client_secret or '' }}"
+                               placeholder="e.g., PRD-1234567890ab-cdef"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Target Marketplace ID
+                        </label>
+                        <select name="ebay_marketplace_id"
+                                class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono focus:outline-none focus:border-zinc-400 transition cursor-pointer">
+                            {% for m_id, m_label in [
+                                ('EBAY_DE', 'EBAY_DE — Germany / Central Europe'),
+                                ('EBAY_FR', 'EBAY_FR — France'),
+                                ('EBAY_PL', 'EBAY_PL — Poland'),
+                                ('EBAY_GB', 'EBAY_GB — United Kingdom'),
+                                ('EBAY_US', 'EBAY_US — United States'),
+                                ('EBAY_IT', 'EBAY_IT — Italy'),
+                                ('EBAY_ES', 'EBAY_ES — Spain'),
+                                ('EBAY_AT', 'EBAY_AT — Austria')
+                            ] %}
+                            <option value="{{ m_id }}" {% if (ebay_marketplace_id or 'EBAY_DE') == m_id %}selected{% endif %}>{{ m_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Default Ship-To Country Code
+                        </label>
+                        <input type="text" name="ebay_ship_to_country"
+                               value="{{ ebay_ship_to_country or 'CZ' }}"
+                               placeholder="CZ"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition uppercase" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Telegram Digest Alerts -->
         <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
             <div class="md:col-span-4 space-y-1">
                 <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">Telegram Alerts</h2>
@@ -203,7 +331,7 @@
             </div>
         </section>
 
-        <!-- Section 4: ntfy Push Notifications -->
+        <!-- Section 5: ntfy Push Notifications -->
         <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
             <div class="md:col-span-4 space-y-1">
                 <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">ntfy Push Notifications</h2>
@@ -265,7 +393,7 @@
             </div>
         </section>
 
-        <!-- Section 5: Email Batch Digests (SMTP) -->
+        <!-- Section 6: Email Batch Digests (SMTP) -->
         <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
             <div class="md:col-span-4 space-y-1">
                 <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">Email Batch Digests</h2>

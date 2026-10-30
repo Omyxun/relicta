@@ -85,7 +85,12 @@ class EbayScraper(BaseScraper):
 
     @property
     def has_api_credentials(self) -> bool:
-        return bool(settings.EBAY_CLIENT_ID.strip() and settings.EBAY_CLIENT_SECRET.strip())
+        cur_settings = get_settings()
+        return bool(cur_settings.EBAY_CLIENT_ID.strip() and cur_settings.EBAY_CLIENT_SECRET.strip())
+
+    def reset_token(self) -> None:
+        self._access_token = None
+        self._token_expires_at = 0.0
 
     async def search(
         self,
@@ -420,12 +425,13 @@ class EbayScraper(BaseScraper):
                 "grant_type": "client_credentials",
                 "scope": EBAY_OAUTH_SCOPE,
             }
+            cur_settings = get_settings()
             response = await self.request(
                 "POST",
-                settings.EBAY_OAUTH_URL,
+                cur_settings.EBAY_OAUTH_URL,
                 headers=headers,
                 data=form_data,
-                auth=(settings.EBAY_CLIENT_ID, settings.EBAY_CLIENT_SECRET),
+                auth=(cur_settings.EBAY_CLIENT_ID.strip(), cur_settings.EBAY_CLIENT_SECRET.strip()),
             )
 
             try:
@@ -450,13 +456,14 @@ class EbayScraper(BaseScraper):
 
     async def _search_single_query_api(self, query_str: str) -> list[ScrapedListing]:
         token = await self._get_valid_access_token()
-        ship_to_country = settings.EBAY_DEFAULT_SHIP_TO_COUNTRY.strip().upper() or "CZ"
+        cur_settings = get_settings()
+        ship_to_country = cur_settings.EBAY_DEFAULT_SHIP_TO_COUNTRY.strip().upper() or "CZ"
 
         headers = {
             "Authorization": f"Bearer {token}",
             "Accept": "application/json",
             "Accept-Language": "cs-CZ,en-US;q=0.9",
-            "X-EBAY-C-MARKETPLACE-ID": settings.EBAY_MARKETPLACE_ID,
+            "X-EBAY-C-MARKETPLACE-ID": cur_settings.EBAY_MARKETPLACE_ID,
             "X-EBAY-C-ENDUSERCTX": f"contextualLocation=country={ship_to_country}",
         }
 
@@ -470,7 +477,7 @@ class EbayScraper(BaseScraper):
 
         response = await self.request(
             "GET",
-            settings.EBAY_BROWSE_SEARCH_URL,
+            cur_settings.EBAY_BROWSE_SEARCH_URL,
             params=params,
             headers=headers,
         )
