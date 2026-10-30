@@ -13,6 +13,7 @@ from app.config import get_settings
 from app.database import init_db
 from app.services.notifier import format_currency
 from app.services.scheduler import ensure_utc, scheduler_service
+from app.instance_lock import InstanceLock
 
 settings = get_settings()
 
@@ -66,13 +67,18 @@ templates.env.globals["app_name"] = settings.APP_NAME
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting %s...", settings.APP_NAME)
-    await init_db()
-    await scheduler_service.start()
+    lock = InstanceLock(settings.DATABASE_URL)
+    lock.acquire()
     try:
-        yield
+        await init_db()
+        await scheduler_service.start()
+        try:
+            yield
+        finally:
+            logger.info("Shutting down %s...", settings.APP_NAME)
+            await scheduler_service.stop()
     finally:
-        logger.info("Shutting down %s...", settings.APP_NAME)
-        await scheduler_service.stop()
+        lock.release()
 
 
 app = FastAPI(

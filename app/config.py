@@ -1,3 +1,5 @@
+import json
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -93,7 +95,24 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_data_dir()
+    override_path = Path("data/ebay-settings.json")
+    if override_path.exists():
+        overrides = json.loads(override_path.read_text(encoding="utf-8"))
+        allowed = {key: value for key, value in overrides.items() if key in {
+            "EBAY_CLIENT_ID", "EBAY_CLIENT_SECRET", "EBAY_MARKETPLACE_ID", "EBAY_DEFAULT_SHIP_TO_COUNTRY"
+        }}
+        settings = settings.model_copy(update=allowed)
     return settings
+
+
+def save_ebay_settings(values: dict[str, str]) -> None:
+    path = Path("data/ebay-settings.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(values), encoding="utf-8")
+    os.chmod(temp, 0o600)
+    os.replace(temp, path)
+    reload_settings()
 
 
 def reload_settings() -> Settings:

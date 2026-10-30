@@ -1,19 +1,26 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, HTTPException
+from sqlalchemy import select
 from fastapi.responses import HTMLResponse
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
-from app.config import get_settings, reload_settings, update_env_file
+from app.config import get_settings, save_ebay_settings
 from app.database import get_db
 from app.main import templates
-from app.models import User
+from app.models import User, SearchJob, SeenListing
 from app.routers.jobs import render_toast_html
 from app.scrapers import get_scraper
 from app.services.currency import currency_service
 from app.services.notifier import notification_dispatcher
+from app.services.scheduler import job_settings_lock
+
+
+async def lock_job_settings():
+    async with job_settings_lock:
+        yield
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -38,7 +45,7 @@ async def settings_page(
             "has_smtp_configured": bool(settings.SMTP_HOST.strip()),
             # eBay credentials from .env
             "ebay_client_id": settings.EBAY_CLIENT_ID,
-            "ebay_client_secret": settings.EBAY_CLIENT_SECRET,
+            "ebay_client_secret": "",
             "ebay_marketplace_id": settings.EBAY_MARKETPLACE_ID,
             "ebay_ship_to_country": settings.EBAY_DEFAULT_SHIP_TO_COUNTRY,
             "has_ebay_credentials": bool(settings.EBAY_CLIENT_ID.strip() and settings.EBAY_CLIENT_SECRET.strip()),
@@ -65,6 +72,7 @@ async def update_settings(
     notify_ntfy: Optional[str] = Form(default=None),
     email_address: str = Form(""),
     notify_email: Optional[str] = Form(default=None),
+    _lock: None = Depends(lock_job_settings),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> HTMLResponse:
@@ -73,6 +81,18 @@ async def update_settings(
     if norm_curr not in settings.SUPPORTED_CURRENCIES:
         norm_curr = settings.DEFAULT_BASE_CURRENCY
 
+    old_currency = current_user.base_currency or "CZK"
+    if norm_curr != old_currency:
+        jobs = (await db.execute(select(SearchJob).where(SearchJob.user_id == current_user.id))).scalars().all()
+        for job in jobs:
+            for field in ("min_price", "max_price", "shipping_buffer"):
+                setattr(job, field, currency_service.convert(getattr(job, field), old_currency, norm_curr))
+        listings = (await db.execute(select(SeenListing).join(SearchJob).where(SearchJob.user_id == current_user.id))).scalars().all()
+        for listing in listings:
+            for field in ("total_price_base", "last_notified_price"):
+                value = getattr(listing, field)
+                if value is not None:
+                    setattr(listing, field, currency_service.convert(value, old_currency, norm_curr))
     current_user.base_currency = norm_curr
     current_user.telegram_bot_token = telegram_bot_token.strip() or None
     current_user.telegram_chat_id = telegram_chat_id.strip() or None
@@ -89,29 +109,22 @@ async def update_settings(
     await db.commit()
     await db.refresh(current_user)
 
-    # Persist eBay API settings directly to .env
-    clean_id = ebay_client_id.strip()
-    clean_secret = ebay_client_secret.strip()
-    clean_mkt = ebay_marketplace_id.strip() or "EBAY_DE"
-    clean_country = ebay_ship_to_country.strip().upper() or "CZ"
-
-    env_updates = {
-        "EBAY_CLIENT_ID": clean_id,
-        "EBAY_CLIENT_SECRET": clean_secret,
-        "EBAY_MARKETPLACE_ID": clean_mkt,
-        "EBAY_DEFAULT_SHIP_TO_COUNTRY": clean_country,
-    }
-    update_env_file(env_updates)
-    reload_settings()
-
-    # Reset in-memory token on scraper instance
-    ebay_scraper = get_scraper("ebay")
-    if ebay_scraper and hasattr(ebay_scraper, "reset_token"):
-        ebay_scraper.reset_token()
+    # Shared marketplace credentials are administered separately from personal settings.
+    if current_user.is_admin:
+        env_updates = {
+            "EBAY_CLIENT_ID": ebay_client_id.strip(),
+            "EBAY_CLIENT_SECRET": (ebay_client_secret.strip() or settings.EBAY_CLIENT_SECRET) if ebay_client_id.strip() else "",
+            "EBAY_MARKETPLACE_ID": ebay_marketplace_id.strip() or "EBAY_DE",
+            "EBAY_DEFAULT_SHIP_TO_COUNTRY": ebay_ship_to_country.strip().upper() or "CZ",
+        }
+        save_ebay_settings(env_updates)
+        ebay_scraper = get_scraper("ebay")
+        if ebay_scraper and hasattr(ebay_scraper, "reset_token"):
+            ebay_scraper.reset_token()
 
     toast = render_toast_html(
         request=request,
-        message="Settings and eBay credentials saved to .env.",
+        message="Settings saved.",
         level="success",
         oob=False,
     )
@@ -123,6 +136,8 @@ async def test_ebay_credentials_endpoint(
     request: Request,
     current_user: User = Depends(get_current_user),
 ) -> HTMLResponse:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Administrator access required")
     form = await request.form()
     settings = get_settings()
     client_id = str(form.get("ebay_client_id", "")).strip() or settings.EBAY_CLIENT_ID.strip()

@@ -23,6 +23,8 @@ from app.services.notifier import (
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+job_settings_lock = asyncio.Lock()
+
 MAX_BACKOFF_SECONDS = 86400  # Cap exponential backoff at 24 hours
 PRUNE_INTERVAL_SECONDS = 86400  # Run seen_listings cleanup once every 24 hours
 
@@ -206,20 +208,21 @@ class SchedulerService:
     ) -> None:
         self._current_job_id = job_id
         try:
-            async with AsyncSessionLocal() as session:
-                stmt = (
-                    select(SearchJob)
-                    .options(selectinload(SearchJob.user))
-                    .where(SearchJob.id == job_id)
-                )
-                result = await session.execute(stmt)
-                job = result.scalar_one_or_none()
-                if job is None:
-                    return
-                if not job.is_active and not is_manual:
-                    return
+            async with job_settings_lock:
+                async with AsyncSessionLocal() as session:
+                    stmt = (
+                        select(SearchJob)
+                        .options(selectinload(SearchJob.user))
+                        .where(SearchJob.id == job_id)
+                    )
+                    result = await session.execute(stmt)
+                    job = result.scalar_one_or_none()
+                    if job is None:
+                        return
+                    if not job.is_active and not is_manual:
+                        return
 
-                await self._execute_job(session, job, is_manual=is_manual)
+                    await self._execute_job(session, job, is_manual=is_manual)
         finally:
             self._current_job_id = None
 

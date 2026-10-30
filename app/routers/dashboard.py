@@ -90,6 +90,8 @@ async def dashboard_view(
             state = "backoff"
         elif failures > 0:
             state = "degraded"
+        elif not h or not h.last_success_at:
+            state = "unknown"
         else:
             state = "healthy"
 
