@@ -2,45 +2,44 @@
 {% block title %}Sign In — {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="min-h-[75vh] flex items-center justify-center">
-    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
-        <div class="flex items-center gap-3 mb-6">
-            <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-mono font-bold">R</span>
-            <div>
-                <h1 class="text-xl font-bold text-white">{{ app_name }}</h1>
-                <p class="text-xs text-slate-400">Self-Hosted Marketplace Deal Monitor</p>
-            </div>
+<div class="min-h-[75vh] flex items-center justify-center font-sans">
+    <div class="w-full max-w-sm bg-[#121215] border border-white/[0.08] rounded-xl shadow-2xl p-7 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+        <div class="mb-6">
+            <h1 class="text-xl font-semibold text-white tracking-tight">{{ app_name }}</h1>
+            <p class="text-xs text-zinc-400 mt-1">Sign in to your marketplace monitoring dashboard</p>
         </div>
 
         {% if error %}
-        <div class="mb-5 rounded-xl bg-rose-500/10 border border-rose-500/30 px-4 py-3 text-sm text-rose-300">
+        <div class="mb-5 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3.5 py-2.5 text-xs text-rose-300">
             {{ error }}
         </div>
         {% endif %}
 
         <form action="/login" method="POST" class="space-y-4">
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Username</label>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Username</label>
                 <input type="text" name="username" required autofocus
-                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+                       placeholder="Enter your username"
+                       class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition" />
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5">Password</label>
                 <input type="password" name="password" required
-                       class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500" />
+                       placeholder="••••••••"
+                       class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition" />
             </div>
 
             <button type="submit"
-                    class="w-full mt-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold py-2.5 px-4 rounded-lg text-sm transition">
+                    class="w-full mt-2 bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-2.5 px-4 rounded-lg text-xs shadow-sm transition">
                 Sign In
             </button>
         </form>
 
         {% if registration_open %}
-        <p class="mt-6 text-center text-xs text-slate-400">
+        <p class="mt-5 text-center text-xs text-zinc-400">
             Need an account?
-            <a href="/register" class="text-sky-400 hover:underline font-medium">Create account</a>
+            <a href="/register" class="text-zinc-200 hover:text-white underline font-medium">Create account</a>
         </p>
         {% endif %}
     </div>

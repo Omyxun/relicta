@@ -204,5 +204,22 @@ class CurrencyService:
     def get_all_rates(self) -> dict[str, float]:
         return dict(self._rates_to_czk)
 
+    def get_rates_to_base(self, base_currency: str) -> dict[str, str]:
+        base = (base_currency or 'CZK').strip().upper()
+        rates: dict[str, str] = {}
+        for code in settings.SUPPORTED_CURRENCIES:
+            if code == base:
+                continue
+            val = self.convert(1.0, from_currency=code, to_currency=base)
+            if val >= 100:
+                formatted = f'{val:.1f}'
+            elif val >= 1:
+                formatted = f'{val:.3f}'
+            else:
+                formatted = f'{val:.4f}'
+            rates[code] = formatted
+        return rates
+
+
 
 currency_service = CurrencyService()

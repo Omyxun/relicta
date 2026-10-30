@@ -94,3 +94,44 @@ def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_data_dir()
     return settings
+
+
+def reload_settings() -> Settings:
+    get_settings.cache_clear()
+    return get_settings()
+
+
+def update_env_file(key_values: dict[str, str], env_path: str = ".env") -> None:
+    """
+    Safely updates or appends key=value pairs into the specified .env file,
+    preserving comments and existing formatting, then reloads the cached settings.
+    """
+    path = Path(env_path)
+    lines: list[str] = []
+    if path.exists():
+        lines = path.read_text(encoding="utf-8").splitlines()
+
+    keys_to_update = dict(key_values)
+    new_lines: list[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+        matched_key = None
+        for k in keys_to_update:
+            if stripped.startswith(f"{k}=") or stripped.startswith(f"export {k}="):
+                matched_key = k
+                break
+
+        if matched_key:
+            val = keys_to_update.pop(matched_key)
+            escaped_val = val.replace('"', '\\"')
+            new_lines.append(f'{matched_key}="{escaped_val}"')
+        else:
+            new_lines.append(line)
+
+    for k, val in keys_to_update.items():
+        escaped_val = val.replace('"', '\\"')
+        new_lines.append(f'{k}="{escaped_val}"')
+
+    path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    reload_settings()

@@ -2,192 +2,529 @@
 {% block title %}Settings &amp; Notifications — {{ app_name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-8">
-    <div>
-        <h1 class="text-xl font-bold text-white">User &amp; Notification Settings</h1>
-        <p class="text-xs text-slate-400 mt-0.5">
-            Configure currency normalization and batch digest delivery channels.
+<div class="space-y-8">
+    <!-- Page Header -->
+    <div class="border-b border-white/[0.07] pb-6">
+        <h1 class="text-xl font-bold text-white tracking-tight">Settings &amp; Preferences</h1>
+        <p class="text-xs text-zinc-400 mt-1">
+            Manage appearance themes, marketplace API integrations, currency normalization, and notification delivery pipelines.
         </p>
     </div>
 
+    <!-- Section 1: Appearance & Theme (Instant Switcher) -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div class="md:col-span-4 space-y-1">
+            <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">Appearance &amp; Theme</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                Choose between the Modern (Linear / Zinc) and OLED (Pure Black) designs, and switch between dark, light, or automatic system theme.
+            </p>
+        </div>
+
+        <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-5">
+            <!-- Theme Preset Selection -->
+            <div>
+                <label class="block text-xs font-medium text-zinc-400 mb-2.5">Design Style Preset</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="theme-preset-controls">
+                    <button type="button" onclick="setThemePreset('modern')" id="btn-theme-modern"
+                            class="p-3.5 rounded-lg border border-white/[0.2] bg-white/[0.06] text-left transition flex flex-col gap-1.5 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-zinc-100">Modern (Linear / Zinc)</span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]"></span>
+                        </div>
+                        <span class="text-[11px] text-zinc-400">Carbon &amp; Zinc surfaces, sharp typography, high-contrast badges.</span>
+                    </button>
+
+                    <button type="button" onclick="setThemePreset('oled')" id="btn-theme-oled"
+                            class="p-3.5 rounded-lg border border-white/[0.07] bg-zinc-950/60 hover:border-white/[0.15] text-left transition flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-zinc-100">OLED (Pure Black)</span>
+                            <span class="w-2 h-2 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.7)]"></span>
+                        </div>
+                        <span class="text-[11px] text-zinc-400">True #000000 pitch-black canvas, maximum contrast and efficiency.</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Color Mode Selection -->
+            <div class="pt-4 border-t border-white/[0.06]">
+                <label class="block text-xs font-medium text-zinc-400 mb-2">Color Mode</label>
+                <div class="inline-flex rounded-lg border border-white/[0.08] bg-zinc-950/60 p-1 gap-1" id="theme-mode-controls">
+                    <button type="button" onclick="setColorMode('dark')" id="btn-mode-dark"
+                            class="px-3.5 py-1.5 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+                        </svg>
+                        <span>Dark</span>
+                    </button>
+                    <button type="button" onclick="setColorMode('light')" id="btn-mode-light"
+                            class="px-3.5 py-1.5 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0zm0 13a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13zm8-5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 16 8zM3 8a.75.75 0 0 1-.75.75H.75a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 3 8zm10.657-5.657a.75.75 0 0 1 0 1.061l-1.06 1.06a.75.75 0 1 1-1.062-1.06l1.06-1.061a.75.75 0 0 1 1.062 0zm-9.193 9.193a.75.75 0 0 1 0 1.06l-1.06 1.061a.75.75 0 1 1-1.061-1.06l1.06-1.061a.75.75 0 0 1 1.061 0zm9.193 2.121a.75.75 0 0 1-1.06 0l-1.061-1.06a.75.75 0 1 1 1.06-1.061l1.061 1.06a.75.75 0 0 1 0 1.061zM4.464 4.464a.75.75 0 0 1-1.06 0L2.343 3.404a.75.75 0 0 1 1.06-1.06l1.061 1.06a.75.75 0 0 1 0 1.06z"/>
+                        </svg>
+                        <span>Light</span>
+                    </button>
+                    <button type="button" onclick="setColorMode('system')" id="btn-mode-system"
+                            class="px-3.5 py-1.5 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8.5v1.5h2a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1h2V13H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2z"/>
+                        </svg>
+                        <span>System</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Settings Form -->
     <form hx-post="/settings"
           hx-target="#toast-container"
           hx-swap="beforeend"
-          class="space-y-6">
+          class="space-y-8">
 
-        <!-- Currency Normalization Card -->
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-base font-bold text-white">Currency Normalization Engine</h2>
-                    <p class="text-xs text-slate-400">Foreign listings (e.g., eBay EUR/USD) are automatically converted before budget filtering.</p>
-                </div>
-                <select name="base_currency"
-                        class="rounded-lg bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm font-mono text-sky-400 focus:outline-none focus:border-sky-500">
-                    {% for code in supported_currencies %}
-                    <option value="{{ code }}" {% if current_user.base_currency == code %}selected{% endif %}>{{ code }}</option>
-                    {% endfor %}
-                </select>
+        <!-- Section 2: Currency Normalization Engine -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
+            <div class="md:col-span-4 space-y-1">
+                <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">Currency Normalization</h2>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Foreign listings (e.g., eBay EUR/USD) are automatically converted into your base currency before budget filtering using official rates.
+                </p>
             </div>
 
-            <div class="pt-3 border-t border-slate-800/80 flex flex-wrap gap-3 text-xs text-slate-400">
-                <span>Cached ČNB / ECB Rates (to CZK):</span>
-                {% for code, rate in fx_rates.items() %}
-                <span class="font-mono px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300">
-                    1 {{ code }} = {{ rate }} CZK
-                </span>
-                {% endfor %}
-            </div>
-        </section>
-
-        <!-- Telegram Notification Card -->
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" name="notify_telegram" value="1"
-                           {% if current_user.notify_telegram %}checked{% endif %}
-                           class="w-4 h-4 rounded border-slate-600 text-sky-500" />
+            <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-base font-bold text-white">Telegram Digest Alerts</h2>
-                        <p class="text-xs text-slate-400">Instant HTML-formatted deal digests via Telegram Bot API.</p>
+                        <div class="text-xs font-medium text-zinc-200">Base Currency</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">Your primary reference currency for all deals and threshold calculations.</div>
+                    </div>
+                    <div class="relative shrink-0">
+                        <select name="base_currency" id="base_currency_select"
+                                class="appearance-none bg-zinc-950/90 border border-white/[0.08] hover:border-white/[0.15] rounded-md text-xs font-mono font-medium text-zinc-200 pl-3 pr-8 py-2 focus:outline-none focus:border-zinc-400 transition cursor-pointer">
+                            {% for code in supported_currencies %}
+                            <option value="{{ code }}" {% if current_user.base_currency == code %}selected{% endif %}>{{ code }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 text-zinc-400">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 6l4 4 4-4" />
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
-                <button type="button"
-                        hx-post="/settings/test/telegram"
-                        hx-target="#toast-container"
-                        hx-swap="beforeend"
-                        class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-xs font-semibold text-sky-300 border border-slate-700 transition">
-                    Send Test Alert
-                </button>
-            </div>
-
-            <!-- 3-Step Setup Guide Tooltip Box -->
-            <details class="bg-slate-950/70 border border-slate-800 rounded-lg p-3.5 text-xs text-slate-300">
-                <summary class="cursor-pointer font-semibold text-sky-400">
-                    ℹ️ 3-Step Telegram Setup Guide (@BotFather &amp; Chat ID)
-                </summary>
-                <ol class="list-decimal list-inside space-y-1.5 mt-2 text-slate-400">
-                    <li>Message <strong>@BotFather</strong> on Telegram, send <code class="text-slate-200">/newbot</code>, and copy the HTTP API Bot Token (or leave blank if the server admin configured a shared token).</li>
-                    <li>Open a chat with your newly created bot and click <strong>Start</strong> (bots cannot initiate messages until you message them first).</li>
-                    <li>Message <strong>@userinfobot</strong> or visit <code class="text-slate-200">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> to find your numeric <code class="text-slate-200">chat_id</code>.</li>
-                </ol>
-            </details>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">
-                        Telegram Bot Token {% if has_shared_tg_token %}<span class="text-emerald-400">(Shared .env token available)</span>{% endif %}
-                    </label>
-                    <input type="password" name="telegram_bot_token"
-                           value="{{ current_user.telegram_bot_token or '' }}"
-                           placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
-                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Telegram Chat ID</label>
-                    <input type="text" name="telegram_chat_id"
-                           value="{{ current_user.telegram_chat_id or '' }}"
-                           placeholder="e.g., 987654321 or -100123456789"
-                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
+                <div class="pt-4 border-t border-white/[0.06] space-y-2">
+                    <div id="base-rate-label" class="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+                        Cached ČNB / ECB Rates (to {{ current_user.base_currency }})
+                    </div>
+                    <div id="fx-rates-container" class="flex flex-wrap gap-2">
+                        {% for code, rate in fx_rates_to_base.items() %}
+                        <span class="font-mono text-xs tabular-nums bg-zinc-950 border border-white/[0.07] text-zinc-300 px-2.5 py-1 rounded">
+                            1 {{ code }} = {{ rate }} {{ current_user.base_currency }}
+                        </span>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- ntfy Notification Card -->
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" name="notify_ntfy" value="1"
-                           {% if current_user.notify_ntfy %}checked{% endif %}
-                           class="w-4 h-4 rounded border-slate-600 text-sky-500" />
+        <!-- Section 3: eBay Marketplace API Integration -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8" id="ebay-section">
+            <div class="md:col-span-4 space-y-1">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">eBay API Integration</h2>
+                    {% if has_ebay_credentials %}
+                    <span class="inline-flex items-center gap-1 font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        Browse API
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.08] px-2 py-0.5 rounded">
+                        Web Fallback
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Configure official eBay Browse API credentials (OAuth2 Client Credentials). When configured, Relicta uses the official API for guaranteed uptime and rate limits. Saved directly to <code class="font-mono text-zinc-300">.env</code>.
+                </p>
+                <div class="pt-1 text-[11px]">
+                    {% if has_ebay_credentials %}
+                    <span class="text-emerald-400 font-medium">✓ Official Browse API credentials active in .env.</span>
+                    {% else %}
+                    <span class="text-zinc-500 font-medium">Leave blank to use automatic keyless EU web scraping.</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-4">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-base font-bold text-white">ntfy Push Notifications</h2>
-                        <p class="text-xs text-slate-400">Supports public ntfy.sh or self-hosted ntfy instances with Markdown &amp; priority tags.</p>
+                        <div class="text-xs font-medium text-zinc-200">eBay Developer API Credentials</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">App ID and Cert ID from developer.ebay.com</div>
+                    </div>
+
+                    <button type="button"
+                            hx-post="/settings/test/ebay"
+                            hx-include="#ebay-section input, #ebay-section select"
+                            hx-target="#toast-container"
+                            hx-swap="beforeend"
+                            class="bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-md transition shrink-0 inline-flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 8A6 6 0 1 1 8 2" />
+                            <path d="M8 5v3l2 2" />
+                        </svg>
+                        <span>Test Credentials</span>
+                    </button>
+                </div>
+
+                <!-- Clean Accordion Guide -->
+                <details class="group bg-zinc-950/70 border border-white/[0.08] rounded-lg p-3.5 text-xs text-zinc-300">
+                    <summary class="cursor-pointer font-medium text-zinc-300 hover:text-white flex items-center justify-between list-none select-none">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-zinc-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="8" cy="8" r="6" />
+                                <path d="M8 7v4M8 5h.01" />
+                            </svg>
+                            <span>How to get free eBay API credentials (developer.ebay.com)</span>
+                        </div>
+                        <svg class="w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 group-open:rotate-90 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 4l4 4-4 4" />
+                        </svg>
+                    </summary>
+                    <ol class="list-decimal list-inside space-y-1.5 mt-3 pt-3 border-t border-white/[0.06] text-zinc-400">
+                        <li>Register for a free account at <strong class="text-zinc-300">developer.ebay.com</strong>.</li>
+                        <li>Create a new application under <strong class="text-zinc-300">User Keys (Production)</strong>.</li>
+                        <li>Copy the <strong class="text-zinc-300">App ID (Client ID)</strong> and <strong class="text-zinc-300">Cert ID (Client Secret)</strong>.</li>
+                        <li>Paste them below and click <strong class="text-zinc-300">Save All Settings</strong>. Credentials will be written to <code class="font-mono text-zinc-200 bg-white/[0.04] px-1 py-0.5 rounded">.env</code>.</li>
+                    </ol>
+                </details>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            eBay Client ID (App ID)
+                        </label>
+                        <input type="text" name="ebay_client_id"
+                               value="{{ ebay_client_id or '' }}"
+                               placeholder="e.g., YourName-Relicta-PRD-123456"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            eBay Client Secret (Cert ID)
+                        </label>
+                        <input type="password" name="ebay_client_secret"
+                               value="{{ ebay_client_secret or '' }}"
+                               placeholder="e.g., PRD-1234567890ab-cdef"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
                     </div>
                 </div>
 
-                <button type="button"
-                        hx-post="/settings/test/ntfy"
-                        hx-target="#toast-container"
-                        hx-swap="beforeend"
-                        class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-xs font-semibold text-sky-300 border border-slate-700 transition">
-                    Send Test Alert
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">ntfy Server URL</label>
-                    <input type="url" name="ntfy_url"
-                           value="{{ current_user.ntfy_url or default_ntfy_url }}"
-                           placeholder="https://ntfy.sh"
-                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Topic Name</label>
-                    <input type="text" name="ntfy_topic"
-                           value="{{ current_user.ntfy_topic or '' }}"
-                           placeholder="my-secret-bazar-alerts"
-                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Access Token (Optional)</label>
-                    <input type="password" name="ntfy_token"
-                           value="{{ current_user.ntfy_token or '' }}"
-                           placeholder="tk_..."
-                           class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
-                </div>
-            </div>
-        </section>
-
-        <!-- Email Digest Card -->
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-3">
-                    <input type="checkbox" name="notify_email" value="1"
-                           {% if current_user.notify_email %}checked{% endif %}
-                           class="w-4 h-4 rounded border-slate-600 text-sky-500" />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div>
-                        <h2 class="text-base font-bold text-white">Email Batch Digests (SMTP)</h2>
-                        <p class="text-xs text-slate-400">
-                            Multipart HTML + plaintext digests.
-                            {% if has_smtp_configured %}
-                            <span class="text-emerald-400">SMTP relay configured in .env.</span>
-                            {% else %}
-                            <span class="text-amber-400">Configure SMTP_HOST in .env to enable email delivery.</span>
-                            {% endif %}
-                        </p>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Target Marketplace ID
+                        </label>
+                        <select name="ebay_marketplace_id"
+                                class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono focus:outline-none focus:border-zinc-400 transition cursor-pointer">
+                            {% for m_id, m_label in [
+                                ('EBAY_DE', 'EBAY_DE — Germany / Central Europe'),
+                                ('EBAY_FR', 'EBAY_FR — France'),
+                                ('EBAY_PL', 'EBAY_PL — Poland'),
+                                ('EBAY_GB', 'EBAY_GB — United Kingdom'),
+                                ('EBAY_US', 'EBAY_US — United States'),
+                                ('EBAY_IT', 'EBAY_IT — Italy'),
+                                ('EBAY_ES', 'EBAY_ES — Spain'),
+                                ('EBAY_AT', 'EBAY_AT — Austria')
+                            ] %}
+                            <option value="{{ m_id }}" {% if (ebay_marketplace_id or 'EBAY_DE') == m_id %}selected{% endif %}>{{ m_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Default Ship-To Country Code
+                        </label>
+                        <input type="text" name="ebay_ship_to_country"
+                               value="{{ ebay_ship_to_country or 'CZ' }}"
+                               placeholder="CZ"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition uppercase" />
                     </div>
                 </div>
-
-                <button type="button"
-                        hx-post="/settings/test/email"
-                        hx-target="#toast-container"
-                        hx-swap="beforeend"
-                        class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-xs font-semibold text-sky-300 border border-slate-700 transition">
-                    Send Test Alert
-                </button>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-slate-300 mb-1">Recipient Email Address</label>
-                <input type="email" name="email_address"
-                       value="{{ current_user.email_address or '' }}"
-                       placeholder="alerts@example.com"
-                       class="w-full max-w-md rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-sky-500" />
             </div>
         </section>
 
-        <div class="flex justify-end">
+        <!-- Section 4: Telegram Digest Alerts -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
+            <div class="md:col-span-4 space-y-1">
+                <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">Telegram Alerts</h2>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Instant HTML-formatted deal digests delivered via Telegram Bot API with direct links to verified listings.
+                </p>
+            </div>
+
+            <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                            <input type="checkbox" name="notify_telegram" value="1"
+                                   {% if current_user.notify_telegram %}checked{% endif %}
+                                   class="sr-only peer" />
+                            <div class="w-9 h-5 bg-zinc-800 peer-checked:bg-emerald-500 rounded-full transition-colors border border-white/[0.1]"></div>
+                            <div class="w-4 h-4 bg-white rounded-full transition-transform absolute left-0.5 top-0.5 peer-checked:translate-x-4 pointer-events-none shadow-sm"></div>
+                        </label>
+                        <div>
+                            <div class="text-xs font-medium text-zinc-200">Telegram Digest Alerts</div>
+                            <div class="text-xs text-zinc-500 mt-0.5">Enable real-time notification push to your Telegram chat.</div>
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            hx-post="/settings/test/telegram"
+                            hx-target="#toast-container"
+                            hx-swap="beforeend"
+                            class="bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-md transition shrink-0">
+                        Send Test Alert
+                    </button>
+                </div>
+
+                <!-- Clean Accordion Guide -->
+                <details class="group bg-zinc-950/70 border border-white/[0.08] rounded-lg p-3.5 text-xs text-zinc-300">
+                    <summary class="cursor-pointer font-medium text-zinc-300 hover:text-white flex items-center justify-between list-none select-none">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-zinc-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="8" cy="8" r="6" />
+                                <path d="M8 7v4M8 5h.01" />
+                            </svg>
+                            <span>3-Step Telegram Setup Guide (@BotFather &amp; Chat ID)</span>
+                        </div>
+                        <svg class="w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 group-open:rotate-90 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 4l4 4-4 4" />
+                        </svg>
+                    </summary>
+                    <ol class="list-decimal list-inside space-y-1.5 mt-3 pt-3 border-t border-white/[0.06] text-zinc-400">
+                        <li>Message <strong class="text-zinc-300">@BotFather</strong> on Telegram, send <code class="font-mono text-zinc-200 bg-white/[0.04] px-1 py-0.5 rounded">/newbot</code>, and copy the HTTP API Bot Token (or leave blank if the server admin configured a shared token).</li>
+                        <li>Open a chat with your newly created bot and click <strong class="text-zinc-300">Start</strong> (bots cannot initiate messages until you message them first).</li>
+                        <li>Message <strong class="text-zinc-300">@userinfobot</strong> or visit <code class="font-mono text-zinc-200 bg-white/[0.04] px-1 py-0.5 rounded">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> to find your numeric <code class="font-mono text-zinc-200 bg-white/[0.04] px-1 py-0.5 rounded">chat_id</code>.</li>
+                    </ol>
+                </details>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">
+                            Telegram Bot Token {% if has_shared_tg_token %}<span class="text-emerald-400">(Shared .env token available)</span>{% endif %}
+                        </label>
+                        <input type="password" name="telegram_bot_token"
+                               value="{{ current_user.telegram_bot_token or '' }}"
+                               placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Telegram Chat ID</label>
+                        <input type="text" name="telegram_chat_id"
+                               value="{{ current_user.telegram_chat_id or '' }}"
+                               placeholder="e.g., 987654321 or -100123456789"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: ntfy Push Notifications -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
+            <div class="md:col-span-4 space-y-1">
+                <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">ntfy Push Notifications</h2>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Lightweight real-time push alerts to your phone, desktop, or smartwatch via public ntfy.sh or a private server.
+                </p>
+            </div>
+
+            <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                            <input type="checkbox" name="notify_ntfy" value="1"
+                                   {% if current_user.notify_ntfy %}checked{% endif %}
+                                   class="sr-only peer" />
+                            <div class="w-9 h-5 bg-zinc-800 peer-checked:bg-emerald-500 rounded-full transition-colors border border-white/[0.1]"></div>
+                            <div class="w-4 h-4 bg-white rounded-full transition-transform absolute left-0.5 top-0.5 peer-checked:translate-x-4 pointer-events-none shadow-sm"></div>
+                        </label>
+                        <div>
+                            <div class="text-xs font-medium text-zinc-200">ntfy Push Notifications</div>
+                            <div class="text-xs text-zinc-500 mt-0.5">Supports markdown rendering and custom priority alerts.</div>
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            hx-post="/settings/test/ntfy"
+                            hx-target="#toast-container"
+                            hx-swap="beforeend"
+                            class="bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-md transition shrink-0">
+                        Send Test Alert
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">ntfy Server URL</label>
+                        <input type="url" name="ntfy_url"
+                               value="{{ current_user.ntfy_url or default_ntfy_url }}"
+                               placeholder="https://ntfy.sh"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Topic Name</label>
+                        <input type="text" name="ntfy_topic"
+                               value="{{ current_user.ntfy_topic or '' }}"
+                               placeholder="my-secret-bazar-alerts"
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-400 mb-1.5">Access Token (Optional)</label>
+                        <input type="password" name="ntfy_token"
+                               value="{{ current_user.ntfy_token or '' }}"
+                               placeholder="tk_..."
+                               class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 6: Email Batch Digests (SMTP) -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
+            <div class="md:col-span-4 space-y-1">
+                <h2 class="text-sm font-semibold text-zinc-100 tracking-tight">Email Batch Digests</h2>
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Multipart HTML + plaintext digests sent via your designated SMTP mail server.
+                </p>
+                <div class="pt-1 text-[11px]">
+                    {% if has_smtp_configured %}
+                    <span class="text-emerald-400 font-medium">✓ SMTP relay configured in .env.</span>
+                    {% else %}
+                    <span class="text-amber-400/90 font-medium">Configure SMTP_HOST in .env to enable email delivery.</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="md:col-span-8 bg-[#121215] border border-white/[0.07] rounded-xl p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] space-y-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <label class="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                            <input type="checkbox" name="notify_email" value="1"
+                                   {% if current_user.notify_email %}checked{% endif %}
+                                   class="sr-only peer" />
+                            <div class="w-9 h-5 bg-zinc-800 peer-checked:bg-emerald-500 rounded-full transition-colors border border-white/[0.1]"></div>
+                            <div class="w-4 h-4 bg-white rounded-full transition-transform absolute left-0.5 top-0.5 peer-checked:translate-x-4 pointer-events-none shadow-sm"></div>
+                        </label>
+                        <div>
+                            <div class="text-xs font-medium text-zinc-200">Email Digest Delivery</div>
+                            <div class="text-xs text-zinc-500 mt-0.5">Periodic email summaries of verified matches.</div>
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            hx-post="/settings/test/email"
+                            hx-target="#toast-container"
+                            hx-swap="beforeend"
+                            class="bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-zinc-200 text-xs font-medium px-3 py-1.5 rounded-md transition shrink-0">
+                        Send Test Alert
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-zinc-400 mb-1.5">Recipient Email Address</label>
+                    <input type="email" name="email_address"
+                           value="{{ current_user.email_address or '' }}"
+                           placeholder="alerts@example.com"
+                           class="w-full max-w-md bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
+                </div>
+            </div>
+        </section>
+
+        <!-- Save Button Footer -->
+        <div class="flex justify-end pt-4 border-t border-white/[0.06]">
             <button type="submit"
-                    class="px-6 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-sm transition">
+                    class="bg-zinc-100 text-zinc-950 hover:bg-white font-medium text-xs px-5 py-2.5 rounded-md shadow-sm transition">
                 Save All Settings
             </button>
         </div>
     </form>
 </div>
+
+<!-- Theme Switcher & Live Rates Client Controller -->
+<script>
+    (function() {
+        const rawFxRatesToCzk = {{ fx_rates | tojson }};
+
+        // Live Currency Rate Pills Update
+        const currSelect = document.getElementById('base_currency_select');
+        if (currSelect) {
+            currSelect.addEventListener('change', function() {
+                const newBase = this.value;
+                const label = document.getElementById('base-rate-label');
+                if (label) label.textContent = `Cached ČNB / ECB Rates (to ${newBase})`;
+                const container = document.getElementById('fx-rates-container');
+                if (!container) return;
+
+                const baseRateToCzk = rawFxRatesToCzk[newBase] || 1.0;
+                let html = '';
+                for (const [code, rateToCzk] of Object.entries(rawFxRatesToCzk)) {
+                    if (code === newBase) continue;
+                    const converted = rateToCzk / baseRateToCzk;
+                    const formatted = converted >= 100
+                        ? converted.toFixed(1)
+                        : (converted >= 1 ? converted.toFixed(3) : converted.toFixed(4));
+                    html += `<span class="font-mono text-xs tabular-nums bg-zinc-950 border border-white/[0.07] text-zinc-300 px-2.5 py-1 rounded">1 ${code} = ${formatted} ${newBase}</span> `;
+                }
+                container.innerHTML = html;
+            });
+        }
+
+        function updateUI() {
+            const currentPreset = localStorage.getItem('relicta_theme_preset') || 'modern';
+            const currentMode = localStorage.getItem('relicta_color_mode') || 'dark';
+
+            // Update preset buttons
+            const modernBtn = document.getElementById('btn-theme-modern');
+            const oledBtn = document.getElementById('btn-theme-oled');
+            if (modernBtn && oledBtn) {
+                if (currentPreset === 'modern') {
+                    modernBtn.className = "p-3.5 rounded-lg border border-white/[0.2] bg-white/[0.06] text-left transition flex flex-col gap-1.5 shadow-sm";
+                    oledBtn.className = "p-3.5 rounded-lg border border-white/[0.07] bg-zinc-950/60 hover:border-white/[0.15] text-left transition flex flex-col gap-1.5";
+                } else {
+                    oledBtn.className = "p-3.5 rounded-lg border border-white/[0.25] bg-black text-left transition flex flex-col gap-1.5 shadow-sm ring-1 ring-white/10";
+                    modernBtn.className = "p-3.5 rounded-lg border border-white/[0.07] bg-zinc-950/60 hover:border-white/[0.15] text-left transition flex flex-col gap-1.5";
+                }
+            }
+
+            // Update mode buttons
+            ['dark', 'light', 'system'].forEach(mode => {
+                const btn = document.getElementById('btn-mode-' + mode);
+                if (btn) {
+                    if (currentMode === mode) {
+                        btn.className = "px-3.5 py-1.5 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 bg-white/[0.12] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]";
+                    } else {
+                        btn.className = "px-3.5 py-1.5 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]";
+                    }
+                }
+            });
+        }
+
+        window.setThemePreset = function(preset) {
+            window.relictaSetThemePreset(preset);
+            updateUI();
+        };
+
+        window.setColorMode = function(mode) {
+            window.relictaSetColorMode(mode);
+            updateUI();
+        };
+
+        window.addEventListener('relicta-theme-changed', updateUI);
+        updateUI();
+    })();
+</script>
 {% endblock %}

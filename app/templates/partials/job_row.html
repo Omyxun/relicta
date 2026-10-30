@@ -1,113 +1,153 @@
-<tr id="job-row-{{ job.id }}" class="hover:bg-slate-800/30 transition">
-    <td class="py-4 px-4 align-top">
+<tr id="job-row-{{ job.id }}" class="hover:bg-white/[0.02] transition">
+    <!-- Job & Queries Column -->
+    <td class="py-3.5 px-4 align-top">
         <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full {% if not job.is_active %}bg-slate-600{% elif is_running %}bg-sky-400 animate-ping{% else %}bg-emerald-400{% endif %}"></span>
-            <span class="font-semibold text-white">{{ job.name }}</span>
-            <span class="text-xs text-slate-500">({{ job.total_matches_count }} matches)</span>
+            <span class="w-2 h-2 rounded-full shrink-0 {% if not job.is_active %}bg-zinc-600{% elif is_running %}bg-emerald-400 animate-ping{% else %}bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]{% endif %}"></span>
+            <span class="text-sm font-medium text-zinc-100">{{ job.name }}</span>
+            <span class="font-mono text-xs text-zinc-500">({{ job.total_matches_count }} matches)</span>
         </div>
         <div class="mt-1.5 flex flex-wrap gap-1">
             {% for q in job.search_queries %}
-            <span class="px-2 py-0.5 text-[11px] font-mono bg-slate-950 border border-slate-800 rounded text-slate-300">
+            <span class="font-mono text-[11px] bg-zinc-950 border border-white/[0.07] text-zinc-300 px-2 py-0.5 rounded">
                 "{{ q }}"
             </span>
             {% endfor %}
         </div>
     </td>
 
-    <td class="py-4 px-4 align-top">
+    <!-- Platforms Column -->
+    <td class="py-3.5 px-4 align-top">
         <div class="flex flex-wrap gap-1">
             {% for p in job.platforms %}
-            <span class="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded bg-sky-500/15 text-sky-300 border border-sky-500/30">
+            <span class="font-mono text-[10px] uppercase tracking-wider bg-white/[0.04] border border-white/[0.08] text-zinc-300 px-2 py-0.5 rounded">
                 {{ p }}
             </span>
             {% endfor %}
         </div>
     </td>
 
-    <td class="py-4 px-4 align-top text-xs">
-        <div class="font-semibold text-slate-200">
+    <!-- Budget & Ship Column -->
+    <td class="py-3.5 px-4 align-top text-xs">
+        <div class="font-mono text-xs text-zinc-200 tabular-nums">
             {{ job.min_price | format_currency(current_user.base_currency) }} &ndash; {{ job.max_price | format_currency(current_user.base_currency) }}
         </div>
-        <div class="text-slate-400 mt-0.5">
+        <div class="font-mono text-[11px] text-zinc-500 mt-0.5">
             +{{ job.shipping_buffer | format_currency(current_user.base_currency) }} ship buffer
         </div>
         <div class="mt-1 flex flex-wrap gap-1">
             {% if job.allow_unpriced %}
-            <span class="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Dohodou OK</span>
+            <span class="font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Dohodou OK</span>
             {% endif %}
             {% if job.require_shipping %}
-            <span class="px-1.5 py-0.5 text-[10px] rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">Ship Required</span>
+            <span class="font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.05] text-zinc-300 border border-white/[0.08]">Ship Required</span>
             {% endif %}
         </div>
     </td>
 
-    <td class="py-4 px-4 align-top text-xs max-w-xs">
-        {% if job.required_keywords %}
-        <div class="text-emerald-300 truncate" title="{{ job.required_keywords }}">
-            <strong>REQ:</strong> {{ job.required_keywords }}
-        </div>
-        {% else %}
-        <div class="text-slate-500">No required keywords</div>
-        {% endif %}
+    <!-- Keywords Column -->
+    <td class="py-3.5 px-4 align-top text-xs max-w-xs">
+        <div class="space-y-1 font-mono text-[11px]">
+            {% if job.required_keywords %}
+            <div class="flex items-center gap-1.5 truncate" title="{{ job.required_keywords }}">
+                <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0">REQ</span>
+                <span class="text-zinc-300 truncate">{{ job.required_keywords }}</span>
+            </div>
+            {% else %}
+            <div class="text-zinc-600">No required keywords</div>
+            {% endif %}
 
-        {% if job.excluded_keywords %}
-        <div class="text-rose-300/80 truncate mt-0.5" title="{{ job.excluded_keywords }}">
-            <strong>EXCL:</strong> {{ job.excluded_keywords }}
+            {% if job.excluded_keywords %}
+            <div class="flex items-center gap-1.5 truncate" title="{{ job.excluded_keywords }}">
+                <span class="bg-rose-500/10 text-rose-400/90 border border-rose-500/20 px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0">EXCL</span>
+                <span class="text-zinc-400 truncate">{{ job.excluded_keywords }}</span>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </td>
 
-    <td class="py-4 px-4 align-top text-xs text-slate-300">
-        <div>Every <span class="font-mono">{{ job.poll_interval_seconds }}s</span></div>
-        <div class="text-slate-500 mt-0.5">Last: {{ job.last_run_at | time_ago }}</div>
-        {% if job.is_active %}
-        <div class="text-sky-400 mt-0.5">Next: {{ job.next_run_at | time_ago }}</div>
-        {% else %}
-        <div class="text-amber-400 mt-0.5">Paused</div>
-        {% endif %}
+    <!-- Schedule Column -->
+    <td class="py-3.5 px-4 align-top text-xs">
+        <div class="space-y-0.5">
+            <div class="font-mono text-xs text-zinc-200 tabular-nums">Every {{ job.poll_interval_seconds }}s</div>
+            <div class="font-mono text-[11px] text-zinc-500">Last: {{ job.last_run_at | time_ago }}</div>
+            {% if job.is_active %}
+            <div class="font-mono text-[11px] text-emerald-400/90">Next: {{ job.next_run_at | time_ago }}</div>
+            {% else %}
+            <div class="font-mono text-[11px] text-amber-400/90">Paused</div>
+            {% endif %}
+        </div>
     </td>
 
-    <td class="py-4 px-4 align-top text-right whitespace-nowrap">
-        <div class="inline-flex items-center gap-1.5">
+    <!-- Actions Column -->
+    <td class="py-3.5 px-4 align-top text-right whitespace-nowrap">
+        <div class="inline-flex items-center rounded-md border border-white/[0.08] bg-zinc-950/60 divide-x divide-white/[0.08] overflow-hidden shadow-sm">
+            <!-- Run Now -->
             <button type="button"
                     hx-post="/jobs/{{ job.id }}/run"
                     hx-target="#job-row-{{ job.id }}"
                     hx-swap="outerHTML"
                     title="Queue immediate manual scan"
-                    class="px-2.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500 hover:text-slate-950 text-sky-300 border border-sky-500/30 text-xs font-semibold transition">
-                Run Now
+                    class="text-xs font-medium px-2.5 py-1.5 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition inline-flex items-center gap-1.5">
+                <svg class="w-3 h-3 text-emerald-400 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 3.5l8 4.5-8 4.5v-9z" />
+                </svg>
+                <span>Run</span>
             </button>
 
+            <!-- Pause / Resume -->
             <button type="button"
                     hx-post="/jobs/{{ job.id }}/toggle"
                     hx-target="#job-row-{{ job.id }}"
                     hx-swap="outerHTML"
-                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-                {% if job.is_active %}Pause{% else %}Resume{% endif %}
+                    class="text-xs font-medium px-2.5 py-1.5 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition inline-flex items-center gap-1.5">
+                {% if job.is_active %}
+                <svg class="w-3 h-3 text-zinc-400 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 3h3v10H4V3zm5 0h3v10H9V3z" />
+                </svg>
+                <span>Pause</span>
+                {% else %}
+                <svg class="w-3 h-3 text-emerald-400 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 3.5l8 4.5-8 4.5v-9z" />
+                </svg>
+                <span>Resume</span>
+                {% endif %}
             </button>
 
+            <!-- Edit -->
             <button type="button"
                     hx-get="/jobs/{{ job.id }}/edit"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
-                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
-                Edit
+                    class="text-xs font-medium px-2.5 py-1.5 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition inline-flex items-center gap-1.5">
+                <svg class="w-3 h-3 text-zinc-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L4.5 13.5l-3 1 1-3L11.5 2.5z" />
+                </svg>
+                <span>Edit</span>
             </button>
 
+            <!-- Clone -->
             <button type="button"
                     hx-post="/jobs/{{ job.id }}/clone"
                     title="Duplicate job"
-                    class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">
-                Clone
+                    class="text-xs font-medium px-2.5 py-1.5 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition inline-flex items-center gap-1.5">
+                <svg class="w-3 h-3 text-zinc-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="5" width="8" height="8" rx="1.5" />
+                    <path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" />
+                </svg>
+                <span>Clone</span>
             </button>
 
+            <!-- Delete -->
             <button type="button"
                     hx-delete="/jobs/{{ job.id }}"
                     hx-target="#job-row-{{ job.id }}"
                     hx-swap="outerHTML"
                     hx-confirm="Delete search job '{{ job.name }}' and all its seen listings?"
-                    class="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 border border-rose-500/20 text-xs font-medium transition">
-                Delete
+                    class="text-xs font-medium px-2.5 py-1.5 text-zinc-300 hover:bg-rose-500/15 hover:text-rose-400 transition inline-flex items-center gap-1.5">
+                <svg class="w-3 h-3 text-rose-400 shrink-0" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2.5 4h11M5.5 4V2.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V4M12.5 4v9a1.5 1.5 0 0 1-1.5 1.5h-6A1.5 1.5 0 0 1 3.5 13V4" />
+                </svg>
+                <span>Delete</span>
             </button>
         </div>
     </td>
