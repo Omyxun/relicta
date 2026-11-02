@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.models import User
 from app.services.matcher import AlertType, FinalMatchResult, ScrapedListing
+from app.services.ntfy_client import post_notification
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -322,7 +323,6 @@ class NtfyNotifier(BaseNotifier):
         if not base_url or not topic:
             return False, "ntfy server URL or topic is not configured."
 
-        endpoint = f"{base_url}/{topic}"
         title = f"{settings.APP_NAME}: {digest.job_name} ({digest.total_count})"
         priority = "high" if digest.price_drops else "default"
         tags = "chart_with_downwards_trend,shopping" if digest.price_drops else "shopping,bell"
@@ -356,20 +356,7 @@ class NtfyNotifier(BaseNotifier):
         if token:
             headers["Authorization"] = f"Bearer {token}"
 
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.post(
-                    endpoint,
-                    content=body.encode("utf-8"),
-                    headers=headers,
-                )
-                if resp.status_code >= 400:
-                    return False, f"ntfy HTTP {resp.status_code}: {resp.text[:200]}"
-        except httpx.RequestError as exc:
-            logger.error("ntfy network error: %s", exc)
-            return False, f"Network error talking to ntfy: {exc}"
-
-        return True, "Sent ntfy notification successfully."
+        return await post_notification(base_url, topic, body, headers)
 
     async def send_system_alert(
         self, user: User, title: str, message: str
@@ -378,7 +365,6 @@ class NtfyNotifier(BaseNotifier):
         if not base_url or not topic:
             return False, "ntfy credentials missing."
 
-        endpoint = f"{base_url}/{topic}"
         headers: dict[str, str] = {
             "Title": title.encode("ascii", errors="ignore").decode("ascii") or "Health Alert",
             "Priority": "high",
@@ -388,19 +374,7 @@ class NtfyNotifier(BaseNotifier):
         if token:
             headers["Authorization"] = f"Bearer {token}"
 
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.post(
-                    endpoint,
-                    content=message.encode("utf-8"),
-                    headers=headers,
-                )
-                if resp.status_code >= 400:
-                    return False, f"ntfy HTTP {resp.status_code}: {resp.text[:200]}"
-        except httpx.RequestError as exc:
-            return False, f"Network error talking to ntfy: {exc}"
-
-        return True, "Sent ntfy system alert."
+        return await post_notification(base_url, topic, message, headers)
 
     @staticmethod
     def _format_item_md(item: DigestItem) -> str:

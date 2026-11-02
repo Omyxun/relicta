@@ -39,9 +39,15 @@
                         <th class="py-3 px-4 font-medium text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-white/[0.06] text-sm">
+                <tbody id="job-rows"
+                       hx-get="/jobs"
+                       hx-trigger="every 5s"
+                       hx-select="#job-rows"
+                       hx-swap="outerHTML"
+                       class="divide-y divide-white/[0.06] text-sm">
                     {% for job in jobs %}
-                        {% set is_running = job.id in running_ids %}
+                        {% set is_running = job.id == current_job_id %}
+                        {% set is_queued = job.id in running_ids and not is_running %}
                         {% include "partials/job_row.html" %}
                     {% endfor %}
                 </tbody>

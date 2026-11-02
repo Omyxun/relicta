@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(
         default="insecure-dev-secret-key-replace-immediately-in-env",
         min_length=16,
+        validate_default=True,
     )
     ALLOW_REGISTRATION: bool = True
     SESSION_COOKIE_NAME: str = "relicta_session"
@@ -70,6 +71,8 @@ class Settings(BaseSettings):
     # Notification Defaults
     TELEGRAM_DEFAULT_BOT_TOKEN: str = ""
     NTFY_DEFAULT_SERVER_URL: str = "https://ntfy.sh"
+    # Additional operator-approved LAN ntfy origins (JSON array in .env).
+    NTFY_ALLOWED_PRIVATE_SERVERS: tuple[str, ...] = ()
 
     # SMTP Relay Settings
     SMTP_HOST: str = ""
@@ -78,6 +81,17 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "alerts@localhost"
     SMTP_USE_TLS: bool = True
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def reject_placeholder_secret(cls, value: str) -> str:
+        if value in {
+            "insecure-dev-secret-key-replace-immediately-in-env",
+            "replace-with-a-unique-random-secret",
+            "change-this-to-a-64-char-random-hex-string-in-production",
+        } or not value.strip():
+            raise ValueError("Generate a unique SECRET_KEY before starting Relicta.")
+        return value
 
     @field_validator("DEFAULT_BASE_CURRENCY", mode="before")
     @classmethod

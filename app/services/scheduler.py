@@ -49,8 +49,8 @@ class SchedulerService:
         self._task: Optional[asyncio.Task[None]] = None
         self._stop_event = asyncio.Event()
         self._wake_event = asyncio.Event()
-        self._manual_queue: asyncio.Queue[int] = asyncio.Queue()
-        self._queued_manual_job_ids: set[int] = set()
+        self._immediate_queue: asyncio.Queue[tuple[int, bool]] = asyncio.Queue()
+        self._queued_job_ids: set[int] = set()
         self._current_job_id: Optional[int] = None
         self._last_prune_at: Optional[datetime] = None
 
@@ -59,7 +59,7 @@ class SchedulerService:
         return self._current_job_id
 
     def is_job_queued_or_running(self, job_id: int) -> bool:
-        return self._current_job_id == job_id or job_id in self._queued_manual_job_ids
+        return self._current_job_id == job_id or job_id in self._queued_job_ids
 
     async def start(self) -> None:
         if self._task is not None and not self._task.done():
@@ -86,15 +86,16 @@ class SchedulerService:
         await close_all_scrapers()
         logger.info("Sequential SchedulerService stopped cleanly.")
 
-    def trigger_job_now(self, job_id: int) -> bool:
+    def trigger_job_now(self, job_id: int, *, is_manual: bool = True) -> bool:
         """
         Enqueues a job for immediate sequential execution by the background worker.
         Returns True if newly queued, False if already queued or running.
+        Automatic first scans still respect paused jobs and scraper backoff.
         """
         if self.is_job_queued_or_running(job_id):
             return False
-        self._queued_manual_job_ids.add(job_id)
-        self._manual_queue.put_nowait(job_id)
+        self._queued_job_ids.add(job_id)
+        self._immediate_queue.put_nowait((job_id, is_manual))
         self._wake_event.set()
         return True
 
@@ -125,18 +126,23 @@ class SchedulerService:
     async def _worker_loop(self) -> None:
         while not self._stop_event.is_set():
             try:
+                # Clear before any awaited checks so changes arriving during those
+                # checks remain visible when we reach the idle wait.
+                self._wake_event.clear()
                 await self._run_maintenance_if_due()
 
-                # 1. Prioritize manual "Run Now" triggers from the Web GUI
-                if not self._manual_queue.empty():
-                    manual_job_id = await self._manual_queue.get()
-                    self._queued_manual_job_ids.discard(manual_job_id)
-                    await self._run_single_job_by_id(manual_job_id, is_manual=True)
+                # 1. Prioritize first scans, resumed jobs, and manual "Run Now".
+                if not self._immediate_queue.empty():
+                    job_id, is_manual = self._immediate_queue.get_nowait()
+                    self._queued_job_ids.discard(job_id)
+                    await self._run_single_job_by_id(job_id, is_manual=is_manual)
                     await asyncio.sleep(random.uniform(1.5, 3.5))
                     continue
 
                 # 2. Check next scheduled due SearchJob
                 due_job_id = await self._pop_next_due_job_id()
+                if not self._immediate_queue.empty():
+                    continue
                 if due_job_id is not None:
                     await self._run_single_job_by_id(due_job_id, is_manual=False)
                     # Stagger gap between sequential jobs
@@ -145,7 +151,6 @@ class SchedulerService:
                     continue
 
                 # 3. Wait for next tick or manual wake signal
-                self._wake_event.clear()
                 try:
                     await asyncio.wait_for(
                         self._wake_event.wait(),

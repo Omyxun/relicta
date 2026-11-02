@@ -73,8 +73,8 @@ def set_session_cookie(
     token = create_session_token(user.id, user.username)
     is_https = False
     if request is not None:
-        proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-        is_https = proto.lower() == "https"
+        # Uvicorn handles forwarded headers from trusted proxies only.
+        is_https = request.url.scheme == "https"
 
     response.set_cookie(
         key=settings.SESSION_COOKIE_NAME,

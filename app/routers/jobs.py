@@ -71,7 +71,9 @@ def render_job_row_with_toast(
             "request": request,
             "job": job,
             "current_user": current_user,
-            "is_running": scheduler_service.is_job_queued_or_running(job.id),
+            "is_running": scheduler_service.current_job_id == job.id,
+            "is_queued": scheduler_service.is_job_queued_or_running(job.id)
+            and scheduler_service.current_job_id != job.id,
         }
     )
     toast_html = render_toast_html(
@@ -118,6 +120,7 @@ async def list_jobs(
             "current_user": current_user,
             "jobs": jobs,
             "running_ids": running_ids,
+            "current_job_id": scheduler_service.current_job_id,
         },
     )
 
@@ -227,9 +230,9 @@ async def create_job(
     )
     db.add(job)
     await db.commit()
+    scheduler_service.trigger_job_now(job.id, is_manual=False)
     await db.refresh(job)
 
-    scheduler_service.notify_schedule_changed()
     return Response(status_code=200, headers={"HX-Redirect": "/jobs"})
 
 
@@ -313,9 +316,12 @@ async def toggle_job(
     if job.is_active:
         job.next_run_at = utc_now()
     await db.commit()
+    if job.is_active:
+        scheduler_service.trigger_job_now(job.id, is_manual=False)
+    else:
+        scheduler_service.notify_schedule_changed()
     await db.refresh(job)
 
-    scheduler_service.notify_schedule_changed()
     status_str = "resumed" if job.is_active else "paused"
     return render_job_row_with_toast(
         request=request,

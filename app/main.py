@@ -14,6 +14,7 @@ from app.database import init_db
 from app.services.notifier import format_currency
 from app.services.scheduler import ensure_utc, scheduler_service
 from app.instance_lock import InstanceLock
+from app.security import SameOriginMiddleware
 
 settings = get_settings()
 
@@ -88,6 +89,7 @@ app = FastAPI(
     docs_url=None,
     redoc_url=None,
 )
+app.add_middleware(SameOriginMiddleware)
 
 
 @app.exception_handler(AuthenticationRequired)
