@@ -257,6 +257,11 @@ class SchedulerService:
                 break
 
             scraper = get_scraper(platform_name)
+            if platform_name.startswith("custom:"):
+                from app.models import CustomSource
+                from app.scrapers.custom import CustomScraper
+                source = await session.get(CustomSource, int(platform_name.split(":")[1]))
+                scraper = CustomScraper(source) if source else None
             if scraper is None:
                 logger.warning("Unknown scraper platform '%s' on job #%d", platform_name, job.id)
                 continue

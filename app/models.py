@@ -55,6 +55,18 @@ class User(Base):
     )
 
 
+class CustomSource(Base):
+    __tablename__ = "custom_sources"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    creator_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    search_url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    search_parameter: Mapped[str] = mapped_column(String(256), nullable=False)
+    currency: Mapped[str] = mapped_column(String(8), nullable=False)
+    selectors: Mapped[dict[str, str]] = mapped_column(JSON, nullable=False)
+
+
 class SearchJob(Base):
     __tablename__ = "search_jobs"
 

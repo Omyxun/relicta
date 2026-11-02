@@ -80,7 +80,8 @@ async def dashboard_view(
     health_by_platform = {h.platform: h for h in health_res.scalars().all()}
 
     scraper_statuses: list[dict[str, object]] = []
-    for platform_key in get_all_scrapers():
+    from app.routers.jobs import available_sources
+    for platform_key in await available_sources(db):
         h = health_by_platform.get(platform_key)
         backoff_dt = ensure_utc(h.backoff_until) if h else None
         in_backoff = backoff_dt is not None and backoff_dt > now

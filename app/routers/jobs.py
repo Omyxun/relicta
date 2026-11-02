@@ -13,6 +13,12 @@ from app.models import SearchJob, User, utc_now
 from app.scrapers import get_all_scrapers
 from app.services.scheduler import scheduler_service
 
+async def available_sources(db):
+    from app.models import CustomSource
+    sources = (await db.execute(select(CustomSource))).scalars().all()
+    return {**get_all_scrapers(), **{f"custom:{s.id}": s.name for s in sources}}
+
+
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 DEFAULT_EXCLUDED_KEYWORDS = (
@@ -119,6 +125,7 @@ async def list_jobs(
 @router.get("/new", response_class=HTMLResponse)
 async def new_job_modal(
     request: Request,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -127,7 +134,7 @@ async def new_job_modal(
         context={
             "current_user": current_user,
             "job": None,
-            "available_platforms": list(get_all_scrapers().keys()),
+            "available_platforms": list((await available_sources(db)).keys()),
             "default_excluded": DEFAULT_EXCLUDED_KEYWORDS,
             "error": None,
         },
@@ -148,7 +155,7 @@ async def edit_job_modal(
         context={
             "current_user": current_user,
             "job": job,
-            "available_platforms": list(get_all_scrapers().keys()),
+            "available_platforms": list((await available_sources(db)).keys()),
             "default_excluded": DEFAULT_EXCLUDED_KEYWORDS,
             "error": None,
         },
@@ -175,7 +182,7 @@ async def create_job(
     valid_platforms = [
         p.strip().lower()
         for p in platforms
-        if p.strip().lower() in get_all_scrapers()
+        if p.strip().lower() in await available_sources(db)
     ]
     queries = parse_search_queries_input(search_queries_raw)
 
@@ -196,7 +203,7 @@ async def create_job(
             context={
                 "current_user": current_user,
                 "job": None,
-                "available_platforms": list(get_all_scrapers().keys()),
+                "available_platforms": list((await available_sources(db)).keys()),
                 "default_excluded": excluded_keywords,
                 "error": error,
             },
@@ -248,7 +255,7 @@ async def update_job(
     valid_platforms = [
         p.strip().lower()
         for p in platforms
-        if p.strip().lower() in get_all_scrapers()
+        if p.strip().lower() in await available_sources(db)
     ]
     queries = parse_search_queries_input(search_queries_raw)
 
@@ -269,7 +276,7 @@ async def update_job(
             context={
                 "current_user": current_user,
                 "job": job,
-                "available_platforms": list(get_all_scrapers().keys()),
+                "available_platforms": list((await available_sources(db)).keys()),
                 "default_excluded": DEFAULT_EXCLUDED_KEYWORDS,
                 "error": error,
             },

@@ -56,3 +56,5 @@ ENV/
 *.swo
 *~
 .DS_Store
+
+.cache/

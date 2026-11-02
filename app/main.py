@@ -120,3 +120,5 @@ app.include_router(auth_routes.router)
 app.include_router(dashboard.router)
 app.include_router(jobs.router)
 app.include_router(settings_router.router)
+from app.routers import sources
+app.include_router(sources.router)
