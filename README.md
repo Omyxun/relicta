@@ -1,7 +1,7 @@
 # Relicta
 > *relictus* (Latin) — abandoned, left behind
 
-Relicta is a self-hosted marketplace monitor for trusted local networks that helps you find matching listings across Bazoš, Sbazar, eBay, Facebook Marketplace, and custom sources. (This project is almost entirely  vibecoded so use at your own risk)
+Relicta is a self-hosted marketplace monitor for trusted local networks that helps you find matching listings across Bazoš, Sbazar, eBay, Facebook Marketplace, and custom sources. (This project is almost entirely vibecoded so use at your own risk)
 
 ## Features
 
