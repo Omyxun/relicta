@@ -1,3 +1,5 @@
+import json
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -19,6 +21,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(
         default="insecure-dev-secret-key-replace-immediately-in-env",
         min_length=16,
+        validate_default=True,
     )
     ALLOW_REGISTRATION: bool = True
     SESSION_COOKIE_NAME: str = "relicta_session"
@@ -68,6 +71,8 @@ class Settings(BaseSettings):
     # Notification Defaults
     TELEGRAM_DEFAULT_BOT_TOKEN: str = ""
     NTFY_DEFAULT_SERVER_URL: str = "https://ntfy.sh"
+    # Additional operator-approved LAN ntfy origins (JSON array in .env).
+    NTFY_ALLOWED_PRIVATE_SERVERS: tuple[str, ...] = ()
 
     # SMTP Relay Settings
     SMTP_HOST: str = ""
@@ -76,6 +81,17 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "alerts@localhost"
     SMTP_USE_TLS: bool = True
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def reject_placeholder_secret(cls, value: str) -> str:
+        if value in {
+            "insecure-dev-secret-key-replace-immediately-in-env",
+            "replace-with-a-unique-random-secret",
+            "change-this-to-a-64-char-random-hex-string-in-production",
+        } or not value.strip():
+            raise ValueError("Generate a unique SECRET_KEY before starting Relicta.")
+        return value
 
     @field_validator("DEFAULT_BASE_CURRENCY", mode="before")
     @classmethod
@@ -93,7 +109,24 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_data_dir()
+    override_path = Path("data/ebay-settings.json")
+    if override_path.exists():
+        overrides = json.loads(override_path.read_text(encoding="utf-8"))
+        allowed = {key: value for key, value in overrides.items() if key in {
+            "EBAY_CLIENT_ID", "EBAY_CLIENT_SECRET", "EBAY_MARKETPLACE_ID", "EBAY_DEFAULT_SHIP_TO_COUNTRY"
+        }}
+        settings = settings.model_copy(update=allowed)
     return settings
+
+
+def save_ebay_settings(values: dict[str, str]) -> None:
+    path = Path("data/ebay-settings.json")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp = path.with_suffix(".tmp")
+    temp.write_text(json.dumps(values), encoding="utf-8")
+    os.chmod(temp, 0o600)
+    os.replace(temp, path)
+    reload_settings()
 
 
 def reload_settings() -> Settings:

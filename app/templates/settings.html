@@ -94,7 +94,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div class="text-xs font-medium text-zinc-200">Base Currency</div>
-                        <div class="text-xs text-zinc-500 mt-0.5">Your primary reference currency for all deals and threshold calculations.</div>
+                        <div class="text-xs text-zinc-500 mt-0.5">Changing currency converts existing job budgets and saved prices at the current cached rate.</div>
                     </div>
                     <div class="relative shrink-0">
                         <select name="base_currency" id="base_currency_select"
@@ -126,6 +126,7 @@
             </div>
         </section>
 
+        {% if current_user.is_admin %}
         <!-- Section 3: eBay Marketplace API Integration -->
         <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8" id="ebay-section">
             <div class="md:col-span-4 space-y-1">
@@ -143,11 +144,11 @@
                     {% endif %}
                 </div>
                 <p class="text-xs text-zinc-400 leading-relaxed">
-                    Configure official eBay Browse API credentials (OAuth2 Client Credentials). When configured, Relicta uses the official API for guaranteed uptime and rate limits. Saved directly to <code class="font-mono text-zinc-300">.env</code>.
+                    Configure official eBay Browse API credentials (OAuth2 Client Credentials). When configured, Relicta uses the official API, subject to eBay availability and rate limits. Saved in the persistent data directory.
                 </p>
                 <div class="pt-1 text-[11px]">
                     {% if has_ebay_credentials %}
-                    <span class="text-emerald-400 font-medium">✓ Official Browse API credentials active in .env.</span>
+                    <span class="text-emerald-400 font-medium">✓ Official Browse API credentials configured.</span>
                     {% else %}
                     <span class="text-zinc-500 font-medium">Leave blank to use automatic keyless EU web scraping.</span>
                     {% endif %}
@@ -213,7 +214,7 @@
                             eBay Client Secret (Cert ID)
                         </label>
                         <input type="password" name="ebay_client_secret"
-                               value="{{ ebay_client_secret or '' }}"
+                               value="" placeholder="Leave blank to keep the current secret"
                                placeholder="e.g., PRD-1234567890ab-cdef"
                                class="w-full bg-zinc-950/90 border border-white/[0.08] rounded-md px-3 py-2 text-xs text-zinc-100 font-mono placeholder:text-zinc-600 focus:outline-none focus:border-zinc-400 transition" />
                     </div>
@@ -254,6 +255,7 @@
             </div>
         </section>
 
+        {% endif %}
         <!-- Section 4: Telegram Digest Alerts -->
         <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start border-t border-white/[0.06] pt-8">
             <div class="md:col-span-4 space-y-1">

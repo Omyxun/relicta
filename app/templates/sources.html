@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<style>.source-input{background:#18181b;border:1px solid #52525b;border-radius:6px;padding:8px}button{cursor:pointer}.source-button{padding:8px 12px;border:1px solid #71717a;border-radius:6px}</style>
+<h1 class="text-xl font-semibold mb-3">Custom websites</h1>
+<p class="text-zinc-400 mb-5">Teach Relicta where to find marketplace listings. Sources are shared with everyone. Public search pages only; login walls and CAPTCHAs may prevent access.</p>
+<div class="space-y-3 mb-6">
+{% for source in sources %}
+<div class="p-4 bg-[#121215] border border-white/[0.1] rounded-lg flex justify-between">
+<div><strong>{{ source.name }}</strong> <span class="text-zinc-500">custom:{{ source.id }} · {{ source.currency }}</span>
+{% set h = health.get('custom:' ~ source.id) %}{% if h and h.last_error_message %}<p class="text-rose-400">{{ h.last_error_message }}</p>{% endif %}</div>
+{% if current_user.is_admin or current_user.id == source.creator_id %}
+<div><button class="source-button" onclick='editSource({{ {"id":source.id,"name":source.name,"search_url":source.search_url,"search_parameter":source.search_parameter,"currency":source.currency,"selectors":source.selectors}|tojson }})'>Edit / retest</button>
+<button class="source-button" onclick="removeSource({{source.id}})">Delete</button></div>{% endif %}
+</div>{% else %}<p>No custom websites yet.</p>{% endfor %}
+</div>
+<section class="p-5 bg-[#121215] border border-white/[0.1] rounded-lg space-y-4">
+<h2 class="font-semibold">Configure a website</h2>
+<div class="flex flex-wrap gap-3"><input id="source-name" aria-label="Website name" class="source-input" placeholder="Website name" maxlength="128">
+<input id="source-url" aria-label="Search results URL" class="source-input flex-1" placeholder="Paste a search-results URL">
+<button id="load" class="source-button">Load preview</button></div>
+<div class="flex gap-3"><label>Search term in URL <select id="parameter" class="source-input"></select></label>
+<label>Currency <select id="currency" class="source-input">{% for currency in ['CZK','EUR','USD','GBP','PLN'] %}<option>{{currency}}</option>{% endfor %}</select></label></div>
+<p class="text-sm text-zinc-400">Choose “Listing card” and click a card in the image. Use “Larger element” until its outline surrounds the whole card. Then select each field and click its content. Green outlines show the inferred matches. Only the first page is scanned.</p>
+<div class="flex gap-3"><select id="field" class="source-input">{% for key, label in [('card','Listing card'),('title','Title (required)'),('link','Listing link (required)'),('price','Price'),('image','Image'),('location','Location'),('description','Description')] %}<option value="{{key}}">{{label}}</option>{% endfor %}</select>
+<button id="larger" class="source-button">Larger element</button><button id="clear" class="source-button">Clear selected field</button></div>
+<p id="selection" class="text-sm text-zinc-400"></p>
+<div class="overflow-auto"><div id="canvas" style="position:relative;width:1200px;height:900px;display:none"><img id="shot" alt="Website preview for field selection" width="1200" height="900"><div id="outlines" style="pointer-events:none;position:absolute;inset:0"></div></div></div>
+<p class="text-sm text-zinc-400">Missing prices count as unpriced. Enable “Allow unpriced” in a job to receive those listings. Keywords use the selected description when available.</p>
+<button id="test" class="source-button">Test extraction</button> <button id="save" class="source-button">Test and save shared source</button>
+<p id="status" role="status" class="text-amber-400 whitespace-pre-wrap"></p><div id="results" class="space-y-2"></div>
+</section>
+<script>
+let sourceId=null, selectors={}, elements=[], picked=null, parameterValue='',cardPath='';
+const el=id=>document.getElementById(id);
+const status=t=>el('status').textContent=t;
+async function api(path,method,data){const r=await fetch('/sources'+path,{method,headers:{'Content-Type':'application/json'},body:data===undefined?undefined:JSON.stringify(data)});const v=await r.json();if(!r.ok)throw Error(typeof v.detail==='string'?v.detail:JSON.stringify(v.detail));return v;}
+function config(){return {name:el('source-name').value,search_url:el('source-url').value,search_parameter:el('parameter').value,currency:el('currency').value,selectors};}
+function paint(){el('selection').textContent='Selected fields: '+Object.keys(selectors).join(', ');el('outlines').replaceChildren();const chosen=selectors[el('field').value];for(const e of elements.filter(e=>e.selector===chosen || e.path===chosen || (chosen && e.path.endsWith(' > '+chosen)))){const d=document.createElement('div');Object.assign(d.style,{position:'absolute',left:e.x+'px',top:e.y+'px',width:e.w+'px',height:e.h+'px',border:'2px solid #10b981'});el('outlines').append(d);}}
+function choose(e){picked=e;const field=el('field').value;if(field==='card'){cardPath=e.path;selectors[field]=e.selector;}else{selectors[field]=cardPath && e.path.startsWith(cardPath+' > ')?e.path.slice(cardPath.length+3):e.selector;}paint();}
+el('canvas').onclick=event=>{const r=el('canvas').getBoundingClientRect(),x=event.clientX-r.left,y=event.clientY-r.top;const matches=elements.filter(e=>x>=e.x&&x<=e.x+e.w&&y>=e.y&&y<=e.y+e.h).sort((a,b)=>a.w*a.h-b.w*b.h);if(matches.length)choose(matches[0]);};
+el('larger').onclick=()=>{if(!picked)return;const parent=picked.path.split(' > ').slice(0,-1).join(' > ');const e=elements.find(e=>e.path===parent);if(e)choose(e);};
+el('clear').onclick=()=>{delete selectors[el('field').value];paint();};el('field').onchange=paint;
+el('load').onclick=async()=>{status('Rendering page…');try{const p=await api('/preview','POST',{url:el('source-url').value});elements=p.elements;el('shot').src='data:image/png;base64,'+p.image;el('canvas').style.display='block';el('parameter').replaceChildren();for(const [key,value] of p.parameters){const o=new Option(key+' = '+value,key);el('parameter').add(o);}if(parameterValue)el('parameter').value=parameterValue;paint();status('Preview ready. Select a listing card and its fields.');}catch(e){status(e.message);}};
+async function test(save){status('Testing the current page…');try{const c=config();const results=await api('/test','POST',c);el('results').replaceChildren();for(const item of results.slice(0,20)){const d=document.createElement('div');d.textContent=item.title+' · '+(item.raw_price===null?'Unpriced':item.raw_price+' '+item.raw_currency)+' · '+item.url;el('results').append(d);}if(save){await api(sourceId?'/'+sourceId:'',sourceId?'PUT':'POST',c);location.reload();}else status(results.length+' listings extracted.');}catch(e){status(e.message);}}
+el('test').onclick=()=>test(false);el('save').onclick=()=>test(true);
+function editSource(s){sourceId=s.id;selectors=s.selectors;parameterValue=s.search_parameter;el('source-name').value=s.name;el('source-url').value=s.search_url;el('currency').value=s.currency;el('load').click();}
+async function removeSource(id){try{await api('/'+id,'DELETE');location.reload();}catch(e){status(e.message);}}
+</script>
+{% endblock %}

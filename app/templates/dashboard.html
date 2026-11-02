@@ -67,7 +67,7 @@
             <div class="grid grid-cols-2 gap-1.5 mt-2">
                 {% for s in scraper_statuses %}
                 <div class="bg-zinc-950/70 border border-white/[0.05] rounded px-2.5 py-1.5 flex items-center justify-between"
-                     {% if s.state == 'degraded' %}title="{{ s.last_error_message or '' }}"{% elif s.state != 'healthy' %}title="Paused until {{ s.backoff_until | datetime_utc }}: {{ s.last_error_message or '' }}"{% endif %}>
+                     {% if s.state == 'degraded' %}title="{{ s.last_error_message or '' }}"{% elif s.state == 'backoff' %}title="Paused until {{ s.backoff_until | datetime_utc }}: {{ s.last_error_message or '' }}"{% endif %}>
                     <span class="font-mono text-[11px] uppercase text-zinc-300 font-medium truncate mr-1">{{ s.platform }}</span>
                     {% if s.state == 'healthy' %}
                     <span class="inline-flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 shrink-0">
@@ -79,6 +79,8 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.7)]"></span>
                         <span>Warn</span>
                     </span>
+                    {% elif s.state == 'unknown' %}
+                    <span class="text-[11px] font-mono text-zinc-500">Not checked</span>
                     {% else %}
                     <span class="inline-flex items-center gap-1.5 text-[11px] font-mono text-rose-300 shrink-0">
                         <span class="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.7)]"></span>

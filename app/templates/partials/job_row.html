@@ -1,4 +1,4 @@
-<tr id="job-row-{{ job.id }}" class="hover:bg-white/[0.02] transition">
+<tr id="job-row-{{ job.id }}" hx-select="unset" class="hover:bg-white/[0.02] transition">
     <!-- Job & Queries Column -->
     <td class="py-3.5 px-4 align-top">
         <div class="flex items-center gap-2">
@@ -70,7 +70,13 @@
         <div class="space-y-0.5">
             <div class="font-mono text-xs text-zinc-200 tabular-nums">Every {{ job.poll_interval_seconds }}s</div>
             <div class="font-mono text-[11px] text-zinc-500">Last: {{ job.last_run_at | time_ago }}</div>
-            {% if job.is_active %}
+            {% if is_running %}
+            <div class="font-mono text-[11px] text-emerald-400/90">Scanning now</div>
+            {% elif is_queued %}
+            <div class="font-mono text-[11px] text-emerald-400/90">Queued to scan</div>
+            {% elif job.is_active and not job.last_run_at %}
+            <div class="font-mono text-[11px] text-emerald-400/90">First scan pending</div>
+            {% elif job.is_active %}
             <div class="font-mono text-[11px] text-emerald-400/90">Next: {{ job.next_run_at | time_ago }}</div>
             {% else %}
             <div class="font-mono text-[11px] text-amber-400/90">Paused</div>
